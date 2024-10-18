@@ -86,6 +86,16 @@ private:
 			{
 				return { wxPoint(_Arr[0], _Arr[1]), wxPoint(_Arr[2], _Arr[3]) };
 			}
+
+            std::array<int, 4> g_PackedArrayFromBB(
+                Framework::Geometry::BoundingBox& _BB
+            ) {
+                const wxPoint _Start = _BB.gStarting();
+                const wxPoint _End = _BB.gFinal();
+                return {
+                    _Start.x, _Start.y, _End.x, _End.y
+                };
+            }
 		};
 
 		_LayoutPositions g_LayoutPositions();
@@ -142,6 +152,9 @@ private:
 		Framework::Geometry::BoundingBox g_BufferLineBBAtGivenLineAndChar(
 			const size_t& _WhereLine, const size_t& _WhereChar
 		);
+        const std::array<size_t, 2> g_BufferLineDataAtGivenPosition(
+            const wxPoint& _Position
+        );
 		
 		const int g_BufferLineSizeY() const;
 	/* [=============================== _MouseWheelGlobalActions ===============================] */
@@ -161,7 +174,9 @@ private:
 			m_Backward = 1
 		};
 
-		void init_Cursor(); 
+		void init_Cursor();
+
+        void hk_CursorPlace(wxMouseEvent& _Event);
 
 		void hk_CursorRender(wxAutoBufferedPaintDC& _Canvas);
 
@@ -257,13 +272,18 @@ private:
 			m_Buffer = 1,
 			m_LineIndexing = 2,
 			m_Cursor = 3,
+            m_Global = 4,
 		};
 
 		void init_SmartRefresh();
 		
 		void hk_SmartRefreshUpdate(
 			wxTimerEvent& _Event);
-		void hdl_SmartRefreshPerformUpdate();
+        void hdl_SmartRefreshUpdate();
+
+        void p_SmartRefreshObjects(
+            const std::vector<m_SmartRefreshObjects>& _Objects
+        );
 
 		wxTimer m_SmartRefreshUpdateTimer;
 		std::vector<m_SmartRefreshObjects> m_SmartRefreshBuffer;

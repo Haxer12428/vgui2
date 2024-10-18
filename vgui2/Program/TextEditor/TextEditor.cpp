@@ -14,6 +14,7 @@
 			init_MouseWheelGlobalActions();
 			init_Cursor();
 			init_OnChar();
+            init_SmartRefresh();
 		} catch (const std::exception& /* Pass the exception*/
 			_exc) { throw _exc; }
 	}
@@ -333,7 +334,7 @@
 		cr_List._BufferScroll[0] = _x; 
 		cr_List._BufferScroll[1] = _y; 
 
-		Refresh();
+        p_SmartRefreshObjects({ m_Global });
 	}
 /* [=============================== _Buffer ===============================] */
 	void TextEditor::hk_BufferRender(
@@ -564,6 +565,52 @@
 			_fy += _BufferLineBB.gSize().y;
 		return { wxPoint { _x, _y }, wxPoint { _fx, _fy } };
 	}
+
+    const std::array<size_t, 2> TextEditor::g_BufferLineDataAtGivenPosition(
+        const wxPoint& _Position)
+    { /* Calculate & Return */
+        /* Get _Buffer data */
+        std::array<size_t, 2> _LineData = { 0, 0 };
+
+        _LayoutPositions _Layout = g_LayoutPositions();
+
+        Framework::Geometry::BoundingBox _BufferBB = _Layout.g_BBFromPackedArray(
+            _Layout._BufferBB);
+        const int _LineSize = g_BufferLineSizeY();
+        const int _CharSize = g_BufferCharSizeX();
+
+        const size_t _MinimalLine = 0;
+        const size_t _MaximalLine = (cr_List._Buffer.size() - 1);
+
+        const wxPoint _BufferBBStarting = _BufferBB.gStarting();
+
+        /* Calculate main */
+            int _posx, _posy;
+            _posx = _Position.x;
+            _posy = _Position.y;
+
+            _posx -= _BufferBBStarting.x;
+            _posy -= _BufferBBStarting.y; 
+
+            _posx += cr_List._BufferScroll[0];
+            _posy += cr_List._BufferScroll[1];
+
+            _LineData[1] = (_posx / _CharSize);
+            _LineData[0] = (_posy / _LineSize);
+
+            /* Handle maximal and minimal values to avoid overflow */
+            _LineData[0] = std::max(_MinimalLine, std::min(_MaximalLine, _LineData[0]));
+
+            const std::string& _BufferLine = cr_List._Buffer[_LineData[0]];
+
+            const size_t _MinimalChar = 0;
+            const size_t _MaximalChar = _BufferLine.length();
+
+            _LineData[1] = std::max(_MinimalChar, std::min(_MaximalChar, _LineData[1]));
+        /* Return */
+        return _LineData;
+    }
+
 	/* [=============================== _MouseWheelGlobalActions ===============================] */
 	void TextEditor::init_MouseWheelGlobalActions()
 	{ /* _MouseWheelGlobalActions initializer */
@@ -639,7 +686,7 @@
 	/* [=============================== _Cursor ===============================] */
 	void TextEditor::init_Cursor()
 	{ /* _Cursor initializer */
-		
+        Bind(wxEVT_LEFT_UP, &TextEditor::hk_CursorPlace, this);
 	}
 
 	void TextEditor::hk_CursorRender(
@@ -1055,35 +1102,41 @@
 		const size_t _MaximalLinesVisible = 
 			(g_BufferMaximalLinesVisible() - _PositionalDif);
 
-		/* Character and line sizes */
-		const size_t _CharSizeX = g_BufferCharSizeX();
-		const size_t _LineSizeY = g_BufferLineSizeY();
+        /* Character and line sizes */
+        const size_t _CharSizeX = g_BufferCharSizeX();
+        const size_t _LineSizeY = g_BufferLineSizeY();
+
+        /* Get maximal scroll values */
+        const std::array<int, 2> _MaximalScrolls = g_BufferMaximalScroll();
+
+        const std::array<size_t, 2> _VisibleStartingFrom = {
+             cr_List._BufferScroll[0] / _CharSizeX, cr_List._BufferScroll[1] / _LineSizeY
+        };
 
 		/* Current cursor position in buffer */
 		const size_t& _AtChar = cr_List._CursorAt[1];
 		const size_t& _AtLine = cr_List._CursorAt[0];
 
-		/* Get maximal scroll values */
-		const std::array<int, 2> _MaximalScrolls = g_BufferMaximalScroll();
-
+ 
 		/* Calculate differences between cursor and visible area */
 		std::array<int, 2> _CursorDifs = {
-			static_cast<int>(_MaximalCharsVisible - _AtChar),
-			static_cast<int>(_MaximalLinesVisible - _AtLine)
+			(_MaximalCharsVisible - _AtChar),
+			(_MaximalLinesVisible - _AtLine)
 		};
 
 		/* Calculate the scroll position wanted based on cursor */
 		std::array<int, 2> _ScrollWanted = { 0, 0 };
 
 		/* Horizontal scroll: move left or right */
-		_ScrollWanted[0] = (_CursorDifs[0] < 0)
+		_ScrollWanted[0] = (_VisibleStartingFrom[0] < _AtChar)
 			? (std::abs(_CursorDifs[0]) * _CharSizeX)
 			: (_AtChar * _CharSizeX);
 
 		/* Vertical scroll: move up or down */
-		_ScrollWanted[1] = (_CursorDifs[1] < 0)
+		_ScrollWanted[1] = (_VisibleStartingFrom[1] < _AtLine)
 			? (std::abs(_CursorDifs[1]) * _LineSizeY)
 			: (_AtLine * _LineSizeY);
+
 
 		/* Calculate scroll percentage for horizontal and vertical scrolling */
 		std::array<double, 2> _ScrollWantedProcentage = {
@@ -1110,12 +1163,40 @@
 		}
 	}
 
+    void TextEditor::hk_CursorPlace(
+        wxMouseEvent& _Event)
+    { /* Mouse handler for cursor */
+        const wxPoint _MousePosition = _Event.GetPosition();
+        /* Get layout positions */
+        _LayoutPositions _Layout = g_LayoutPositions();
+
+        Framework::Geometry::BoundingBox _BufferBB = _Layout.g_BBFromPackedArray(
+            _Layout._BufferBB);
+
+        const wxPoint _BufferPosition = _BufferBB.gStarting();
+        const wxSize _BufferSize = _BufferBB.gSize();
+        /* Check if cursor can be placed */
+        if (Framework::Geometry::cBounds(
+            _MousePosition, _BufferPosition, _BufferSize
+        ) == false)
+        { /* Skip event if failed */
+            _Event.Skip(); return; 
+        }
+        /* Check in what line and char the position is located */
+        const std::array<size_t, 2> _CursorWantedAt = g_BufferLineDataAtGivenPosition(
+            _MousePosition);
+        /* Modify cursor positions */
+        cr_List._CursorAt = _CursorWantedAt; 
+        /* Call handler */
+        hdl_CursorGlobalChange(); 
+    }
+
 	void TextEditor::hdl_CursorGlobalChange()
 	{ /* Handle cursor global changes */
 		cr_List._BufferActivatedLine = cr_List._CursorAt[0];
 		hdl_CursorGlobalChangeModifyBufferScroll(); 
 
-		Refresh();
+        p_SmartRefreshObjects({ m_Global });
 	}
 
 	const size_t TextEditor::g_CursorJumpingPosition(
@@ -1399,23 +1480,78 @@
 	{ /* _SmartRefresh update hook */
 		try 
 		{ /* Function calls */
-			hdl_SmartRefreshPerformUpdate();
+			hdl_SmartRefreshUpdate();
 		} catch (const std::exception& ex) { cr_List._Debug->log_TaggedStdException(
 			__FUNCTION__, ex
 		); }
 	}
 
-	void TextEditor::hdl_SmartRefreshPerformUpdate()
+    void TextEditor::p_SmartRefreshObjects(
+        const std::vector<m_SmartRefreshObjects>& _Objects)
+    { /* Push and exit */
+        for (const m_SmartRefreshObjects& _Object :
+            _Objects)
+        { /* Push */
+            m_SmartRefreshBuffer.push_back(_Object);
+        }
+    }
+
+	void TextEditor::hdl_SmartRefreshUpdate()
 	{ /* Update performer */
-		bool _Buffer, _LineIndexing, _Cursor; 
-
+        std::array<bool, 3> _RefreshObjects;
+        /* Force false on all */
+        for (size_t _Iterator = 0; _Iterator <
+            _RefreshObjects.size(); _Iterator++)
+        { /* Override to false by defautl */
+            _RefreshObjects[_Iterator] = false; 
+        }
 		/* Collect data */
-		_Buffer = Framework::Vector::Exists
-			<m_SmartRefreshObjects>(m_SmartRefreshBuffer, m_Buffer);
+        bool _GlobalRefresh = false; 
 
-		_LineIndexing = Framework::Vector::Exists
-			<m_SmartRefreshObjects>(m_SmartRefreshBuffer, m_LineIndexing);
+        for (m_SmartRefreshObjects _Object : m_SmartRefreshBuffer)
+        {
+            if (_Object !=
+                m_Global)
+            { /* Regular object */
+                _RefreshObjects[_Object] = true;
+            } else { _GlobalRefresh = true; }
+        }
+        /* Apply if global */
+        if (_GlobalRefresh
+            == true)
+        { /* Set */
+            for (size_t _Iterator = 0;
+                _Iterator < _RefreshObjects.size(); _Iterator++)
+            { /* Override */
+                _RefreshObjects[_Iterator] = true; 
+            }
+        }
 
-		_Cursor = Framework::Vector::Exists
-			<m_SmartRefreshObjects>(m_SmartRefreshBuffer, m_Cursor);
+        /* Collect refreshments */
+        std::array<std::array<int, 4>, 3> _Refreshments;
+        _LayoutPositions _Layout = g_LayoutPositions();
+
+        Framework::Geometry::BoundingBox _CursorOutlineBB = g_CursorOutlineBB();
+
+        _Refreshments[0] = _Layout._BufferBB;
+        _Refreshments[1] = _Layout._LineIndexingBB;
+        _Refreshments[2] = _Layout.g_PackedArrayFromBB(_CursorOutlineBB);
+
+        /* Refresh */
+        size_t _RefreshIterator = 0; 
+        for (const bool& _ObjectState :
+            _RefreshObjects)
+        { /* Check if needed */
+            if (_ObjectState ==
+                true)
+            { /* Perform refresh */
+                RefreshRect(
+                    _Layout.g_BBFromPackedArray(
+                        _Refreshments[_RefreshIterator]
+                    ).gRect()
+                );
+            } /* Increment iterator */
+            _RefreshIterator++;
+        } /* Clear buffer */
+        m_SmartRefreshBuffer = {}; 
 	}
