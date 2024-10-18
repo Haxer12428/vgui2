@@ -28,8 +28,8 @@ ProgramMainPanel::ProgramMainPanel(
 	_CoreList._LineIndexingActivatedLines = { 0 };
 	_CoreList._Buffer.push_back("123");
 	_CoreList._Buffer.push_back("nigger");
-	//_CoreList._Buffer = Framework::File::Open("C:\\vgui2\\config.cfg").Read().gVector();
-	_CoreList._LayoutBufferSpacingY = _CoreList._LayoutLineIndexingSpacingY;
+	_CoreList._Buffer = Framework::File::Open("C:\\Users\\Survi\\source\\repos\\vgui2\\vgui2\\Program\\TextEditor\\TextEditor.cpp").Read().gVector();
+	_CoreList.m_BufferSpacingY = _CoreList.m_LineIndexingSpacingY;
 	_CoreList._LayoutBufferFont = _font2;
 	_CoreList._LayoutBufferBackgroundColor = _CoreList._LayoutBackgroundColor;
 	_CoreList._LayoutBufferFontColor = wxColor(193, 198, 211);

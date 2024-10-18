@@ -218,7 +218,7 @@
 		Framework::Geometry::BoundingBox _LineIndexingBB = _Layout.g_BBFromPackedArray(_Layout._LineIndexingBB);
 		/* Calculate */
 			const int _LineSY = (_MemoryCanvas.GetTextExtent("Rg").y +
-				cr_List._LayoutLineIndexingSpacingY);
+				cr_List.m_LineIndexingSpacingY);
 			const int _LineSX = (_LineIndexingBB.gSize().x);
 
 			int _x, _y, _fx, _fy;
@@ -244,7 +244,7 @@
 			_y = _Final.y;
 			_x -= cr_List._LayoutLineIndexingSpacingXEnd;
 			_y -= (_MemoryCanvas.GetTextExtent("Rg").y
-				+ cr_List._LayoutLineIndexingSpacingY / 2);
+				+ cr_List.m_LineIndexingSpacingY / 2);
 			_x -= _MemoryCanvas.GetTextExtent(_Number).x; 
 		/* Return*/
 		return wxPoint{_x, _y + 1};
@@ -260,7 +260,7 @@
 			size_t _r1, _r2;
 
 			const int _LineSizeY = (_MemoryCanvas.GetTextExtent("Rg").y
-				+ cr_List._LayoutLineIndexingSpacingY);
+				+ cr_List.m_LineIndexingSpacingY);
 			
 			const int _MaximalVisibleLines = (_Layout.g_BBFromPackedArray(
 				_Layout._LineIndexingBB).gSize().y / _LineSizeY );
@@ -308,6 +308,30 @@
 				0.5, 0.6, ProgramSlider::Vertical
 			);
 	}
+
+	void TextEditor::hdl_ScrollbarsUpdatePositions()
+	{ /* Update positions & sizes of scrollbas */
+		_LayoutPositions _Layout = g_LayoutPositions(); 
+		/* Get layouts */
+		Framework::Geometry::BoundingBox _HorizontalLayout =
+			_Layout.g_BBFromPackedArray(_Layout._HorizontalScrollbarBB);
+
+		Framework::Geometry::BoundingBox _VerticalLayout =
+			_Layout.g_BBFromPackedArray(_Layout._VerticalScrollbarBB);
+		/* Get Values */
+		const wxPoint _VerticalPosition = _VerticalLayout.gStarting();
+		const wxSize _VerticalSize = _VerticalLayout.gSize(); 
+		
+		const wxPoint _HorizontalPosition = _HorizontalLayout.gStarting();
+		const wxSize _HorizontalSize = _HorizontalLayout.gSize();
+		/* Set */
+		m_ScrollbarsVertical->s_Size(_VerticalSize);
+		m_ScrollbarsHorizontal->s_Size(_HorizontalSize);
+
+		m_ScrollbarsVertical->s_Position(_VerticalPosition);
+		m_ScrollbarsHorizontal->s_Position(_HorizontalPosition);
+	}
+
 
 	void TextEditor::hdl_ScrollbarsSetupCheckHK()
 	{ /* Setup Scrollbars hk_ScrollbarsCheck*/
@@ -404,7 +428,7 @@
 			_x -= cr_List._BufferScroll[0];
 			_y -= cr_List._BufferScroll[1];
 
-			_y += ((_Where * _LineSizeY) + cr_List._LayoutBufferSpacingY / 2);
+			_y += ((_Where * _LineSizeY) + cr_List.m_BufferSpacingY / 2);
 			/* Include scroll */
 		/* Return */
 		return wxPoint{_x, _y};
@@ -446,7 +470,7 @@
 		size_t _r1, _r2;
 
 		const int _LineSizeY = (_MemoryCanvas.GetTextExtent("Rg").y
-			+ cr_List._LayoutBufferSpacingY);
+			+ cr_List.m_BufferSpacingY);
 
 		const int _MaximalVisibleLines = (_Layout.g_BBFromPackedArray(
 			_Layout._BufferBB).gSize().y / _LineSizeY);
@@ -510,7 +534,7 @@
 		wxMemoryDC _MemoryCanvas; 
 		_MemoryCanvas.SetFont(cr_List._LayoutBufferFont);
 
-		return (_MemoryCanvas.GetTextExtent("Rg").y + cr_List._LayoutBufferSpacingY);
+		return (_MemoryCanvas.GetTextExtent("Rg").y + cr_List.m_BufferSpacingY);
 	}
 
 	Framework::Geometry::BoundingBox TextEditor::g_BufferLineBBAtGiven(
@@ -681,6 +705,23 @@
 
 		_LayoutBufferFont.SetPointSize(_LayoutBufferFontSizeWantedSize);
 		_LayoutLinesIndexingFont.SetPointSize(_LayoutLinesIndexingFontWantedSize);
+
+		/* Handle spacing change */
+		if (_LayoutBufferFont.GetPointSize()
+			== 1)
+		{ /* Swap to 0 */
+			cr_List.m_BufferSpacingY = 0;
+		} else {cr_List.m_BufferSpacingY = cr_List._LayoutBufferSpacingY;}
+
+		if (_LayoutLinesIndexingFont.GetPointSize()
+			== 1)
+		{ /* Swap to 0 */
+			cr_List.m_LineIndexingSpacingY = 0;
+		} else {cr_List.m_LineIndexingSpacingY = cr_List._LayoutLineIndexingSpacingY;}
+
+
+		p_SmartRefreshObjects({ m_Buffer, m_LineIndexing, m_Cursor });
+		hdl_ScrollbarsUpdatePositions();
 	}
 	
 	/* [=============================== _Cursor ===============================] */
@@ -1197,6 +1238,7 @@
 		hdl_CursorGlobalChangeModifyBufferScroll(); 
 
         p_SmartRefreshObjects({ m_Global });
+		hdl_ScrollbarsUpdatePositions();
 	}
 
 	const size_t TextEditor::g_CursorJumpingPosition(

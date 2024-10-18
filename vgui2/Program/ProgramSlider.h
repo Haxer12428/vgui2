@@ -27,6 +27,9 @@ class ProgramSlider :
 	const double gScrollProcentage() const; 
 
 	const void sScrollProcentage(const double& _NEW);
+
+	const void s_Position(const wxPoint& _Position);
+	const void s_Size(const wxSize& _Size);
 private:
 	/*
 		On Startup

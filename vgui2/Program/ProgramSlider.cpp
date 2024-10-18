@@ -279,3 +279,23 @@ const double ProgramSlider::gScrollProcentage() const
 
 const void ProgramSlider::sScrollProcentage(const double& 
 	_NEW) { _SCROLL_WANTED = ((double)gMaxScroll() * std::max((double)0, std::min((double)1, _NEW))); }
+
+const void ProgramSlider::s_Size(
+	const wxSize& _NewSize) 
+{
+	if (_SIZE.x == _NewSize.x && _SIZE.y == _NewSize.y)
+		return; 
+	_SIZE = _NewSize; 
+	this->SetSize(_SIZE);
+	Refresh();
+}
+
+const void ProgramSlider::s_Position(
+	const wxPoint& _NewPosition)
+{
+	if (_POSITION.x == _NewPosition.x && _POSITION.y == _NewPosition.y)
+		return;
+	_POSITION = _NewPosition; 
+	this->SetPosition(_POSITION);
+	Refresh();
+}

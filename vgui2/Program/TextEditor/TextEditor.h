@@ -49,14 +49,17 @@ class TextEditor :
 		int _LayoutLineIndexingSpacingXStart = 10;
 		int _LayoutLineIndexingSpacingXEnd = 18;
 		int _LayoutScrollbarsAxisLength = 10; 
-		int _LayoutLineIndexingSpacingY = 8;
+		int m_LineIndexingSpacingY = 8;
 		int _ScrollbarsCheckTimerMs = 5; 
 		int _SmartRefreshUpdateTimerMs = 5; 
-		int _LayoutBufferSpacingY = 8;
+		int m_BufferSpacingY = 8;
 		int _MouseWheelGlobalActionsVerticalScrollLinesPerWheelTick = 2;
 		int _LayoutCursorOutlineSize = 1; 
 		int _LayoutCursorSizeX = 2; 
 		int _LayoutCursorTabLength = 2; 
+		int _LayoutLineIndexingSpacingY = 8;
+		int _LayoutBufferSpacingY = 8;
+
 		
 		std::array<int, 2> _BufferScroll = { 0, 0 };
 		std::array<size_t, 2> _CursorAt = { 0, 0 };
@@ -127,6 +130,7 @@ private:
 		void hdl_ScrollbarsInstanceSetup(); 
 		void hdl_ScrollbarsSetupCheckHK();
 		void hk_ScrollbarsCheck(wxTimerEvent& _Event);
+		void hdl_ScrollbarsUpdatePositions();
 
 		wxTimer m_ScrollbarsCheckTimer;
 
