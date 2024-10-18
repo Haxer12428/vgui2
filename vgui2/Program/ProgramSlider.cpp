@@ -251,13 +251,13 @@ const void ProgramSlider::aDragHandler()
 	Framework::Geometry::BoundingBox ELEMENT_BOUNDING_BOX = gElementBoundingBox();
 
 	const double _VALUE_PER_MS = ((
-		(double)(_MODE == Mode::Vertical ? _SIZE_DIF.y : _SIZE_DIF.x) / (((double)1000 / (double)_DRAG_ANIMATE_MS) / (double)2))
+		(double)(_MODE == Mode::Vertical ? _SIZE_DIF.y : _SIZE_DIF.x) / (((double)1000 / (double)_DRAG_ANIMATE_MS) / (double)6))
 	); // Full slider will be moved in 100ms maximum
 
 	if (_SCROLL > _SCROLL_WANTED) // - operation 
-	{ this->_SCROLL = std::max(_SCROLL_WANTED, (double)_SCROLL - _VALUE_PER_MS); RefreshRect(ELEMENT_BOUNDING_BOX.gRect());
+	{ this->_SCROLL = std::max(_SCROLL_WANTED, (double)_SCROLL - _VALUE_PER_MS); Refresh();
 		return; }
-	this->_SCROLL = std::min(_SCROLL_WANTED, (double)_SCROLL + _VALUE_PER_MS); RefreshRect(ELEMENT_BOUNDING_BOX.gRect()); // + operation 
+	this->_SCROLL = std::min(_SCROLL_WANTED, (double)_SCROLL + _VALUE_PER_MS); Refresh(); // + operation 
 }
 
 const int ProgramSlider::gMaxScroll() const
@@ -278,4 +278,4 @@ const double ProgramSlider::gScrollProcentage() const
 }
 
 const void ProgramSlider::sScrollProcentage(const double& 
-	_NEW) { _SCROLL_WANTED = ((double)gMaxScroll() * _NEW); }
+	_NEW) { _SCROLL_WANTED = ((double)gMaxScroll() * std::max((double)0, std::min((double)1, _NEW))); }

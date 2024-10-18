@@ -13,6 +13,54 @@ const wxPoint FRAMEWORK_EMPTY_wxPOINT = wxPoint(0, 0);
 
 namespace Framework
 {
+	class Vector
+	{ public: 
+		template<typename T> static const bool Exists(std::vector<T> _Vector, T _WhatToSearch)
+		{
+			for (const T _Element : _Vector)
+			{
+				if (_Element == _WhatToSearch) return true;
+			} return false; 
+		}
+	};
+
+	class String
+	{ public:
+		static const std::string Erase(
+			const std::string& _String, const size_t& _Where, const size_t& _Count
+		) {
+			const std::string _StrSegment1 = _String.substr(0, _Where - _Count);
+			const std::string _StrSegment2 = _String.substr(_Where);
+			return (_StrSegment1 + _StrSegment2);
+		}
+
+		static const std::string EraseAllSpacesInFront(
+			const std::string& _String
+		) {
+			bool _EraseSpaces = true; 
+			std::string _ReCreated = "";
+			for (size_t _Iterator = 0; _Iterator < _String.length(); _Iterator++)
+			{
+				const char _CurrentChar = _String.at(_Iterator);
+				if (_CurrentChar != ' ')
+				{
+					_EraseSpaces = false;
+				}
+				if (_EraseSpaces == true)
+				{
+					if (_CurrentChar 
+						!= ' ')
+					{ _ReCreated += _CurrentChar; }
+				}
+				else
+				{
+					_ReCreated += _CurrentChar; 
+				}
+			}
+			return _ReCreated;
+		}
+	};
+
 	class Debug
 	{
 	public:
@@ -55,7 +103,7 @@ namespace Framework
 	};
 
 	class System
-	{ public: 
+	{ public:
 		class Clipboard
 		{
 		public:
@@ -89,38 +137,38 @@ namespace Framework
 	};
 
 	class Image
-	{ public: 
+	{ public:
 		static wxImage cColor(
 			wxImage _IMAGE, const wxColor& _COLOR, Framework::Debug* _DEBUG_OBJ = new Framework::Debug()
 		) {
 			/*
-				Transformation 
+				Transformation
 			*/
-			for ( // x axis 
+			for ( // x axis
 				int width = 0; width < _IMAGE.GetWidth(); width++
 				)
 			{
-				for ( // y axis 
+				for ( // y axis
 					int height = 0; height < _IMAGE.GetHeight(); height++
 					)
 				{
 					unsigned char* _PIXEL = (
 						_IMAGE.GetData() + (height * _IMAGE.GetWidth() + width) * 3
-						); // RGB Assumption 
+						); // RGB Assumption
 
-					// Mod the color 
-					_PIXEL[0] = _COLOR.Red(); 
+					// Mod the color
+					_PIXEL[0] = _COLOR.Red();
 					_PIXEL[1] = _COLOR.Green();
 					_PIXEL[2] = _COLOR.Blue();
 				}
-			} // Transformation over, return given value 
+			} // Transformation over, return given value
 			return _IMAGE;
 		}
 
 		static wxImage cSize( // High image quality is standard
 			wxImage _IMAGE, const wxSize& _SIZE, Framework::Debug* _DEBUG_OBJ = new Framework::Debug()
 		) {
-			// Modify size 
+			// Modify size
 			_IMAGE = _IMAGE.Scale(_SIZE.x, _SIZE.y, wxIMAGE_QUALITY_HIGH);
 
 			return _IMAGE;
@@ -140,11 +188,11 @@ namespace Framework
 
 			}
 
-			const std::string gColor() const { return _COLOR; }; 
+			const std::string gColor() const { return _COLOR; };
 			const std::string gText() const { return _TEXT; }
 		public:
-			const std::string _COLOR; 
-			const std::string _TEXT; 
+			const std::string _COLOR;
+			const std::string _TEXT;
 		};
 
 		static const std::string RemoveAllColorEscapesFromAString(
@@ -156,10 +204,10 @@ namespace Framework
 				const size_t _FOUND_ESCAPE_AT = _STR_COPY.find("\\a");
 				if (_FOUND_ESCAPE_AT
 					== std::string::npos)
-					break; // No escaped left | found at all 
+					break; // No escaped left | found at all
 				_STR_COPY.erase(_FOUND_ESCAPE_AT, 8);
 			}
-			return _STR_COPY; 
+			return _STR_COPY;
 		}
 
 		static const wxColor StringToHexColor(
@@ -182,7 +230,7 @@ namespace Framework
 			std::vector<Framework::Transform::ColoredLineHex> _LINES;
 
 			const std::string _ESCAPE = "\\a";
-			const size_t _COLOR_CODE_LEN = 6; 
+			const size_t _COLOR_CODE_LEN = 6;
 
 			std::string _STR_COPY = _STRING;
 
@@ -193,7 +241,7 @@ namespace Framework
 			{
 				_LINES.push_back(
 					{ "DEFCLR", (_FOUND_FIRST_ESCAPE_AT == std::string::npos ? _STR_COPY : _STR_COPY.substr(0, _FOUND_FIRST_ESCAPE_AT)) }
-				); } // We goooooood to gooooo 
+				); } // We goooooood to gooooo
 
 			while (
 				true
@@ -203,19 +251,19 @@ namespace Framework
 
 				if (_FOUND_ESCAPE_AT
 					== std::string::npos)
-					break; // No escape found (hahah no escape, no escape from coding this shit and making my life miserable hahaha(so funny)) 
+					break; // No escape found (hahah no escape, no escape from coding this shit and making my life miserable hahaha(so funny))
 				_STR_COPY = _STR_COPY.substr(_FOUND_ESCAPE_AT + _ESCAPE.length()); // Cut the str to resemble escape + escape '>' \a
 
-				// Now whats left? colorcode + rest of the text 
-				// what will we handle first? colorcode 
+				// Now whats left? colorcode + rest of the text
+				// what will we handle first? colorcode
 				const std::string _COLORCODE = _STR_COPY.substr(0, _COLOR_CODE_LEN);
 				_STR_COPY = _STR_COPY.substr(_COLOR_CODE_LEN);
-				// what we have left? rest of the string 
-				// how do we locate end of current colored segment? by std::string::find 
+				// what we have left? rest of the string
+				// how do we locate end of current colored segment? by std::string::find
 				size_t _FOUND_NEXT_ESCAPE_AT = _STR_COPY.find(_ESCAPE);
 
 				if (_FOUND_NEXT_ESCAPE_AT == std::string::npos)
-				{ // Case: end of the line 
+				{ // Case: end of the line
 					_LINES.push_back({
 						_COLORCODE, _STR_COPY
 						}); break;
@@ -223,8 +271,8 @@ namespace Framework
 				// Case: color codes are still present
 				const std::string _TEXT = _STR_COPY.substr(0, _FOUND_NEXT_ESCAPE_AT);
 				_STR_COPY = _STR_COPY.substr(_FOUND_NEXT_ESCAPE_AT);
-				// What we have left? : nothing 
-				// What we do? save and let the loop run again 
+				// What we have left? : nothing
+				// What we do? save and let the loop run again
 
 				_LINES.push_back({
 					_COLORCODE, _TEXT
@@ -239,12 +287,12 @@ namespace Framework
 		{
 			if (Str.empty()) return {}; // Empty
 			std::vector<std::string> OUTPUT;
-			
-			int Start = 0; int End; 
+
+			int Start = 0; int End;
 
 			while (
 				(End = Str.find("\n", Start)) != std::string::npos
-				) 
+				)
 			{
 				OUTPUT.emplace_back(Str.substr(
 					Start, End - Start));
@@ -254,7 +302,7 @@ namespace Framework
 			if (Start < Str.size())
 				OUTPUT.emplace_back(
 					Str.substr(Start)
-				); 
+				);
 			return OUTPUT;
 		};
 
@@ -263,13 +311,13 @@ namespace Framework
 		) {
 			if ( // True statement
 				Str == "true"
-				) return true; 
-			if ( // False statement 
+				) return true;
+			if ( // False statement
 				Str == "false"
-				) return false; 
+				) return false;
 			// Error occured (return false by default)
 			_DEBUG_OBJ->Push("TRANSFORM_STRING_TO_BOOL_FAILED");
-			return false; 
+			return false;
 		}
 
 		static const wxPoint WxSizeToWxPoint2D(
@@ -327,6 +375,29 @@ namespace Framework
 			const wxSize gSize() { return Framework::Transform::WxPointToWxSize2D(_POSITION2 - _POSITION1); }
 
 			const wxRect gRect() { return wxRect(_POSITION1, gSize()); }
+
+			const bool gVisibility(
+				const wxRect& _Rectangle
+			) {
+				const wxPoint& _x_y = _Rectangle.GetPosition();
+				const wxPoint& _fx_fy = (_x_y + wxPoint(_Rectangle.GetSize().x, _Rectangle.GetSize().y));
+
+				if (_fx_fy.x < _POSITION1.x || _POSITION2.x < _x_y.x)
+					return false; 
+
+				if (_fx_fy.y < _POSITION1.y || _POSITION2.y < _x_y.y)
+					return false; 
+
+				return true; 
+			}
+
+			const wxRect gCenterRect()
+			{
+				const wxSize _Size = gSize();
+
+				const wxPoint _Position1 = _POSITION1 + wxPoint(_Size.x / 2, _Size.y / 2);
+				return wxRect(_Position1, wxSize(_Position1.x, _Position1.y));
+			}
 		private:
 			const wxPoint _POSITION1;
 			const wxPoint _POSITION2;
@@ -339,7 +410,7 @@ namespace Framework
 		) {
 			if ((_POSITION >= _STARTING) && (_POSITION <= (_STARTING + _SIZE)))
 				return true;
-			return false; 
+			return false;
 		}
 
 		static inline const bool cBounds(
@@ -365,16 +436,16 @@ namespace Framework
 				const std::vector<std::string> Value = {}
 			) : _VALUE{ Value } {};
 
-			// [ GET ] 
-			const std::string gString() const 
+			// [ GET ]
+			const std::string gString() const
 			{ return Framework::Transform::StringVectorToString(this->_VALUE); }
 
-			const std::vector<std::string> gVector() const 
+			const std::vector<std::string> gVector() const
 			{ return this->_VALUE; }
 
-			// [ PROVIDE ] 
+			// [ PROVIDE ]
 			const void pVector(
-				const std::vector<std::string>& Value) 
+				const std::vector<std::string>& Value)
 			{ this->_VALUE = Value; };
 
 			const void pString(
@@ -409,7 +480,7 @@ namespace Framework
 					return false;
 				}
 
-				try 
+				try
 				{
 					_FILE.open(_PATH,
 						std::ios::out | std::ios::trunc);
@@ -425,9 +496,9 @@ namespace Framework
 						{ _DEBUG_OBJ->Push("FILE_VALIDATION_STATUS = TRUE"); return true; };
 
 						_DEBUG_OBJ->Push("FILE_VALIDATION_STATUS = FALSE");
-						return false; 
+						return false;
 					}
-					
+
 				}
 				catch (const std::fstream::failure& ex)
 				{
@@ -457,11 +528,11 @@ namespace Framework
 
 				try
 				{
-					std::vector<std::string> BufferCollected; std::string BufferPacket; 
+					std::vector<std::string> BufferCollected; std::string BufferPacket;
 
 					_FILE.open(this->_PATH, std::ios::in);
 
-					if (!_FILE) // Unknown file 
+					if (!_FILE) // Unknown file
 						throw std::exception(
 							"FILE_UNKNOWN_EXIT"
 						);
@@ -471,7 +542,7 @@ namespace Framework
 						std::getline(_FILE, BufferPacket)
 						) { BufferCollected.push_back(BufferPacket); }
 
-					// Return 
+					// Return
 					return Framework::File::Buffer(
 						BufferCollected
 					);
@@ -499,32 +570,32 @@ namespace Framework
 				// Collect buffers ;
 				const std::string CurrentBuffer = this->Read().gString();
 
-				const std::string BufferSum = ( // Add together buffers 
+				const std::string BufferSum = ( // Add together buffers
 					CurrentBuffer + "\n" + _DATA.gString()
 					);
-				// Finalize 
+				// Finalize
 				return this->Write(Framework::File::Buffer(
 					Framework::Transform::StringToVectorString(BufferSum)), _VALIDATE
 				);
 			}
-		
+
 			const bool ModifyLine(
 				const size_t& _AT, const std::string& _DATA, const bool _VALIDATE = false, Framework::Debug* _DEBUG_OBJ = new Framework::Debug()
 			) {
 				std::vector<std::string> Buffer = this->Read().gVector();
 
-				if ( // Check if buffer has given placement 
+				if ( // Check if buffer has given placement
 					_AT <= Buffer.size() && 0 <= 0
 					)
-				{ // Error occured, push debug and abort 
-					_DEBUG_OBJ->Push("INVAILD_MODIFIER_PLACEMENT"); return false; 
+				{ // Error occured, push debug and abort
+					_DEBUG_OBJ->Push("INVAILD_MODIFIER_PLACEMENT"); return false;
 				}
 
-				Buffer[ // Modify 
+				Buffer[ // Modify
 					_AT
-				] = _DATA; 
+				] = _DATA;
 
-				// Finalize 
+				// Finalize
 				return this->Write(Framework::File::Buffer{Buffer}, _VALIDATE, _DEBUG_OBJ);
 			}
 		private:
@@ -555,9 +626,9 @@ namespace Framework
 				{
 					if (_VALUE.empty()
 						== true)
-					{ // _VALUE is empty -> Error 
+					{ // _VALUE is empty -> Error
 						_DEBUG_OBJ->Push("cVALUE_EMPTY"); Corrupted = true;
-					} 
+					}
 				};
 
 				const int gInt(Framework::Debug* _DEBUG_OBJ = new Framework::Debug()) const
@@ -597,7 +668,7 @@ namespace Framework
 				};
 
 			private:
-				std::string _VALUE; bool Corrupted = false; 
+				std::string _VALUE; bool Corrupted = false;
 				Framework::Debug* _DEBUG_OBJ;
 			};
 
@@ -615,111 +686,111 @@ namespace Framework
 			{
 				const std::filesystem::path _DIR = _PATH.parent_path();
 
-				if ( // Check for directories 
+				if ( // Check for directories
 					std::filesystem::is_directory(_DIR) == false
 					)
-				{ // Create directories 
+				{ // Create directories
 					if (std::filesystem::create_directories(
 						_DIR
 					) == false)
-					{ // Failed -> return negative 
+					{ // Failed -> return negative
 						_DEBUG_OBJ->Push(
 							"FILE_CORRUPTION_FIX_FAILED -> CREATE_DIRECTORY_RETURNED_NEGATIVE"
-						); return false; 
+						); return false;
 					} // Went well, proceed
 				}
 
-				if ( // File existance check 
-					std::filesystem::is_regular_file(_PATH) == false 
+				if ( // File existance check
+					std::filesystem::is_regular_file(_PATH) == false
 					)
-				{ // Write file -> empty (not expect validation) 
+				{ // Write file -> empty (not expect validation)
 					return Framework::File::Open(_PATH).Write({}, false, _DEBUG_OBJ);
-				} 
-				// Not corrupted return positive 
-				return true; 
+				}
+				// Not corrupted return positive
+				return true;
 			}
 
 			const bool cForCorruptionAndFix(Framework::Debug* _DEBUG_OBJ = new Framework::Debug())
 			{
-				// GetFileBuffer 
+				// GetFileBuffer
 				std::vector<std::string> FileBuffer = Framework::File::Open(_PATH).Read().gVector();
 
 				if (
 					FileBuffer.size() == 0
-					) // Full corruption 
-				{ // Override whole file 
+					) // Full corruption
+				{ // Override whole file
 					std::vector<std::string> BufferToWrite;
 					for (
 						const std::vector<std::string> ConfigElement : this->_SET
 						)
-					{ // Collect Buffer -> split actions for performance 
+					{ // Collect Buffer -> split actions for performance
 						BufferToWrite.push_back( gAssertedCollumStr(ConfigElement) );
 					}
 
 					if (BufferToWrite.empty() == true)
-					{ // Check if empty 
-						_DEBUG_OBJ->Push("_CORRUPTION_FIX_FAILED -> BUFFER_EMPTY"); return false; 
+					{ // Check if empty
+						_DEBUG_OBJ->Push("_CORRUPTION_FIX_FAILED -> BUFFER_EMPTY"); return false;
 					}
 
-					// Write (validation : true) 
+					// Write (validation : true)
 					return Framework::File::Open(_PATH).Write(
 						Framework::File::Buffer(BufferToWrite), true, _DEBUG_OBJ);
 				}
 
-				bool ReWriteFileBuffer = false; 
-				for ( // Check for singular corruption 
+				bool ReWriteFileBuffer = false;
+				for ( // Check for singular corruption
 					const std::vector<std::string> Element : this->_SET
 					)
 				{ // Perform file check
-					bool FoundElementInFile = false; 
+					bool FoundElementInFile = false;
 
-					size_t FileBufferAt = 0; 
+					size_t FileBufferAt = 0;
 					for (const std::string FileElement : FileBuffer)
-					{ 
+					{
 						const Framework::Config::File::Element ElementFormated = FormatRawElement(
 							FileElement);
 
 						if (ElementFormated.gName() == Element[0])
-						{ // Name valid -> check if value is not empty 
+						{ // Name valid -> check if value is not empty
 							if (
 								ElementFormated.gValue().empty() == true
 								) // Value Empty
-							{ // Fix corruption in FileBuffer -> Force rewrite after 
+							{ // Fix corruption in FileBuffer -> Force rewrite after
 								FileBuffer
 									[FileBufferAt] = gAssertedCollumStr(Element);
-								ReWriteFileBuffer = true; 
+								ReWriteFileBuffer = true;
 							}
-							FoundElementInFile = true; 
+							FoundElementInFile = true;
 						}
 						// Increment _AT;
 						FileBufferAt++;
 					}
 					if (FoundElementInFile ==
 						false)
-					{ // Add element to FileBuffer in order to fix corruption -> Force rewrite after 
-						FileBuffer.push_back(gAssertedCollumStr(Element)); ReWriteFileBuffer = true; 
+					{ // Add element to FileBuffer in order to fix corruption -> Force rewrite after
+						FileBuffer.push_back(gAssertedCollumStr(Element)); ReWriteFileBuffer = true;
 					}
 				}
 
-				if ( // Check if ReWrite needed 
+				if ( // Check if ReWrite needed
 					ReWriteFileBuffer == true
-					) 
+					)
 				{ // Rewrite (validation: true)
 					return Framework::File::Open(_PATH).Write(
 						Framework::File::Buffer(FileBuffer), true
 					);
-				} return true; 
+				} return true;
 			}
 
-			const bool qSetup( // Check for corruption and override _SET 
+			const bool qSetup( // Check for corruption and override _SET
 				const std::vector<std::vector<std::string>>& _SET, Framework::Debug* _DEBUG_OBJ = new Framework::Debug())
 			{
 				this->_SET = _SET;
 
-				if ( // File and directory corruption fix 
+				if ( // File and directory corruption fix
 					cForCorruptedFileAndDirAndFix() == false
 					)
-				{ // Fail 
+				{ // Fail
 					_DEBUG_OBJ->Push("FIX_DIR_AND_FILE_CORRUPTION -> FAIL"); return false;
 				}
 
@@ -730,34 +801,34 @@ namespace Framework
 					_DEBUG_OBJ->Push("FIX_BUFFER_CORRUPTION -> FAIL"); return false;
 				}
 
-				// Refresh buffer after all 
+				// Refresh buffer after all
 				return this->rBuffer();
 			}
 
 			const bool rBuffer(Framework::Debug* _DEBUG_OBJ = new Framework::Debug()) // Buffer refresh : Heavy operation (on larger data sets)
 			{
-				if ( // Fix corruption 
+				if ( // Fix corruption
 					cForCorruptionAndFix(_DEBUG_OBJ) == false
 					)
-				{ // Fail 
+				{ // Fail
 					_DEBUG_OBJ->Push("FIX_BUFFER_CORRUPTION -> FAIL"); return false;
-				} 
+				}
 
 				this->_BUFFER = Framework::File::Open(_PATH).Read(_DEBUG_OBJ).gVector();
-				return true; 
+				return true;
 			}
 
 			const Framework::Config::File::cValue gValue(
 				const std::string& _NAME, const bool _FIX_IF_ERROR = false, Framework::Debug* _DEBUG_OBJ = new Framework::Debug())
-			{ // Iterate 
+			{ // Iterate
 				for (const std::string& FileBufferSegment : _BUFFER)
-				{ // Check for compatibility 
+				{ // Check for compatibility
 					Framework::Config::File::Element FileBufferSegmentElement = this->FormatRawElement(
 						FileBufferSegment);
 
 					if (FileBufferSegmentElement.gName()
 						== _NAME)
-					{ // Name is valid -> return cValue object 
+					{ // Name is valid -> return cValue object
 						return Framework::Config::File::cValue(
 							FileBufferSegmentElement.gValue()
 						);
@@ -780,15 +851,15 @@ namespace Framework
 					"name":"value"
 				*/
 
-				if (_PARAM.size() != 2) 
+				if (_PARAM.size() != 2)
 					// Check if param has supported len
 				{ _DEBUG_OBJ->Push("_PARAM_SIZE_NOT_SUPPORTED"); return FRAMEWORK_EMPTY_STRING; }
 
-				if (_PARAM[0].empty() || _PARAM[1].empty()) 
+				if (_PARAM[0].empty() || _PARAM[1].empty())
 					// Check if params aren't empty
 				{ _DEBUG_OBJ->Push("EMPTY_PARAM_NOT_SUPPORTED"); return FRAMEWORK_EMPTY_STRING; }
 
-				// Return str 
+				// Return str
 				return ("\"" + _PARAM[0] + "\":\"" + _PARAM[1] + "\"");
 			}
 
@@ -797,7 +868,7 @@ namespace Framework
 			) {
 				if (_STR.empty()
 					== true)
-				{ // Empty String 
+				{ // Empty String
 					_DEBUG_OBJ->Push("_STR_EMPTY"); return FRAMEWORK_EMPTY_STRING;
 				}
 
@@ -810,7 +881,7 @@ namespace Framework
 				{ // Failed to find 1st collum
 					_DEBUG_OBJ->Push("1_COLLUM_UNKNOWN"); return FRAMEWORK_EMPTY_STRING;
 				}
-				// Override with sub 
+				// Override with sub
 				c_STR = c_STR.substr(StrFirstCollum + 1);
 
 				const size_t StrSecondCollum = c_STR.find(
@@ -850,7 +921,7 @@ namespace Framework
 
 				if ( // Empty check
 					(Name.empty() == true) || (Value.empty() == true)
-					) { // One of elements is empty 
+					) { // One of elements is empty
 					_DEBUG_OBJ->Push("2_COLLUM_UNKNOWN"); return {};
 				}
 
@@ -858,7 +929,7 @@ namespace Framework
 				return Element{ Name, Value };
 			}
 
-			std::vector<std::string> _BUFFER; 
+			std::vector<std::string> _BUFFER;
 			std::filesystem::path _PATH; std::vector<std::vector<std::string>> _SET;
 		};
 	};

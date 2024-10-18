@@ -1,47 +1,46 @@
 #include "ProgramMainPanel.h"
 
 ProgramMainPanel::ProgramMainPanel(
-	wxFrame* _PARENT, Framework::Debug* _DEBUG, 
+	wxFrame* _PARENT, Framework::Debug* _DEBUG,
 	const wxPoint& _POSITION, const wxSize& _SIZE
-) : 
+) :
 	wxPanel(_PARENT, wxID_ANY, _POSITION, _SIZE)
 {
-    
+	wxFont _font = wxFont(10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	_font.SetFaceName("Menlo");
 
-	_BUFFER = new ProgramBuffer(this, _DEBUG, wxPoint(0, 0), this->GetSize(), wxColor(45, 51, 53), wxColor(37, 41, 42), wxColor(255, 255, 255));
-    _BUFFER->SetFocus();
+	wxFont _font2 = wxFont(10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	_font2.SetFaceName("Menlo");
 
-    const std::vector<
-        std::vector<std::string>
-    > _SYNTAX =
-    {
-        {"int ", "\\a00FF00"},
-        {"const ", "\\a00FF00"},
-        {".", "\\aFF0000"},
-        {"bool ", "\\aFF0000"},
-        {"\"", "\\a00FFFF"},
-        {"<", "\\a00FFFF"},
-        {">", "\\a00FFFF"}
-    };
+	//_DEBUG->LogTaggedInt("y", this->GetPosition().y);
+
+	TextEditor::_CoreList _CoreList;
+	_CoreList._Parent = this;
+	_CoreList._Debug = _DEBUG;
+	_CoreList._Position = wxPoint(0, 0);
+	_CoreList._Size = this->GetSize();
+	_CoreList._LayoutBackgroundColor = wxColor(41, 44, 52);
+	_CoreList._LayoutLinesIndexingFont = _font;
+	_CoreList._LayoutLineIndexingFontColorDeActivated = wxColor(77, 83, 100);
+	_CoreList._LayoutLineIndexingFontColorActivated = wxColor(111, 116, 126);
+	_CoreList._LayoutLineIndexingBackgroundSelectionColor = wxColor(63, 68, 81);
+	_CoreList._LayoutLineIndexingBackgroundRegularColor = _CoreList._LayoutBackgroundColor;
+	_CoreList._LineIndexingActivatedLines = { 0 };
+	_CoreList._Buffer.push_back("123");
+	_CoreList._Buffer.push_back("nigger");
+	//_CoreList._Buffer = Framework::File::Open("C:\\vgui2\\config.cfg").Read().gVector();
+	_CoreList._LayoutBufferSpacingY = _CoreList._LayoutLineIndexingSpacingY;
+	_CoreList._LayoutBufferFont = _font2;
+	_CoreList._LayoutBufferBackgroundColor = _CoreList._LayoutBackgroundColor;
+	_CoreList._LayoutBufferFontColor = wxColor(193, 198, 211);
+
 	
-   
-    _BUFFER->pNextLine("");
 
-    std::unordered_map<std::string, std::string> colors = {
-        {"keyword", RED},      // Keywords in red
-        {"string", GREEN},     // Strings in green
-        {"comment", CYAN}      // Comments in cyan
-    };
+	_CoreList._LayoutScrollbarsElementColorDeActivated = wxColor(77, 83, 98);
+	_CoreList._LayoutScrollbarsBackgroundColor = _CoreList._LayoutBackgroundColor;
+	_CoreList._LayoutBufferActivatedLineColor = wxColor(45, 49, 60);
+	_CoreList._LayoutCursorOutlineColor = wxColor(41, 44, 52);
+	_CoreList._LayoutCursorColor = wxColor(101, 140, 253);
 
-	for (const std::string& _STR : Framework::File::Open(
-        "C:\\Users\\Survi\\source\\repos\\vgui2\\vgui2\\Program\\ProgramBuffer.h"
-        ).Read().gVector())
-	{
-
-        
-       _BUFFER->pNextLine(_STR);
-	}
-   // _BUFFER->pNextLine("\\aFF0000niggers\\aFFFF00nddd\\aDEFCLR");
-
+	TextEditor* _Editor = new TextEditor(_CoreList);
 }
-

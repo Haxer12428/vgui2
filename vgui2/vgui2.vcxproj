@@ -148,6 +148,7 @@
     <ClCompile Include="Program\ProgramResizeIcon.cpp" />
     <ClCompile Include="Program\ProgramSlider.cpp" />
     <ClCompile Include="Program\ProgramTitleBar.cpp" />
+    <ClCompile Include="Program\TextEditor\TextEditor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Framework\Framework.h" />
@@ -158,6 +159,7 @@
     <ClInclude Include="Program\ProgramResizeIcon.h" />
     <ClInclude Include="Program\ProgramSlider.h" />
     <ClInclude Include="Program\ProgramTitleBar.h" />
+    <ClInclude Include="Program\TextEditor\TextEditor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

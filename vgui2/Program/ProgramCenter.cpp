@@ -4,7 +4,7 @@ ProgramCenter::ProgramCenter(
 	const std::string& Name
 ) : wxFrame(nullptr, wxID_ANY, Name, wxPoint(100,100), wxDefaultSize, wxNO_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX)
 {
-	// Load hooks 
+	// Load hooks
 	try
 	{
 		lConfig(
@@ -20,9 +20,9 @@ ProgramCenter::ProgramCenter(
 		const wxSize _FIXED_SIZE = (
 			GetSize() - Framework::Transform::WxPointToWxSize2D(TitleBarInstance->gProgramCenterFixedPosition())
 			);
-		
+
 		const wxPoint _FIXED_POS = wxPoint(
-			120, TitleBarInstance->GetSize().y 
+			120, TitleBarInstance->GetSize().y
 		);
 
 		const wxSize _SIZE_ACC = (_FIXED_SIZE - Framework::Transform::WxPointToWxSize2D(_FIXED_POS) - wxSize(0, 60));
@@ -34,11 +34,11 @@ ProgramCenter::ProgramCenter(
 		// Throw error into LogMessage
 		wxLogMessage(
 			((std::string)"PROGRAM_CENTER: EXCEPTION OCCURED WHEN LOADING HOOKS: " + ex.what()).c_str()
-		); // Refuse to continue with throwing exception, ApplicationBootCenter will handle it; 
+		); // Refuse to continue with throwing exception, ApplicationBootCenter will handle it;
 		throw ex;
 	}
 
-	// Finalize with showing the program 
+	// Finalize with showing the program
 	this->Show(
 		true);
 }
@@ -48,31 +48,31 @@ const void ProgramCenter::lConfig(
 )
 {
 	/*
-		Config system is stored at ProgramCenter::Config as an instance 
-		Path is given in param and set in ProgramCenter::ProgramCenter 
+		Config system is stored at ProgramCenter::Config as an instance
+		Path is given in param and set in ProgramCenter::ProgramCenter
 
-		[ qConfigSetup & qConfigLoad ] 
+		[ qConfigSetup & qConfigLoad ]
 	*/
 
 	this->Config = new Framework::Config::File(_PATH);
-	
+
 	const bool _SETUP_STATUS = Config->qSetup(
 		_DATA_SET, _DEBUG
-	); 
+	);
 
 	if (_SETUP_STATUS
 		== true)
-		return; 
+		return;
 
 	// Case: Error -> Throw exception to stop constructor & tell what happened
-	throw std::exception("lCONFIG_ERROR_qSETUP"); 
+	throw std::exception("lCONFIG_ERROR_qSETUP");
 }
 
 const Framework::Config::File::cValue ProgramCenter::gConfigParam(
 	const std::string& Name)
 {
 	/*
-		Settings: 
+		Settings:
 			Name  : argv[1]
 			Fix   : true
 			Debug : class_instance
@@ -98,12 +98,12 @@ const void ProgramCenter::lWindowDefParams()
 const void ProgramCenter::lDebug()
 {
 	/*
-		Setup timer: [time: config system: 'ProgramCenterDebugCheckMs'] 
+		Setup timer: [time: config system: 'ProgramCenterDebugCheckMs']
 	*/
 	DebugLogHookTimer.SetOwner(this, 1);
 	DebugLogHookTimer.Start(gConfigParam("ProgramCenterDebugCheckMs").gInt());
 
-	// Bind 'function responsible for handling debug hook' to timer with given wxID 
+	// Bind 'function responsible for handling debug hook' to timer with given wxID
 	this->Bind(wxEVT_TIMER,
 		&ProgramCenter::DebugLogHook, this, DebugLogHookTimer.GetId());
 }
@@ -112,7 +112,7 @@ void ProgramCenter::DebugLogHook(
 	wxTimerEvent& _EVT)
 {
 	/*
-		Call 'this->LogDebug' function each time 
+		Call 'this->LogDebug' function each time
 	*/
 	this->DebugLog();
 }
@@ -120,11 +120,11 @@ void ProgramCenter::DebugLogHook(
 const void ProgramCenter::DebugLog()
 {
 	/*
-		Log debug to wxLogMessage each time function is triggered, after: _DEBUG -> _GC 
+		Log debug to wxLogMessage each time function is triggered, after: _DEBUG -> _GC
 	*/
 	const std::vector<std::string> _LOGS = _DEBUG->Get();
 
-	if (_LOGS.empty() == // Return if Empty 
+	if (_LOGS.empty() == // Return if Empty
 		true) return;
 
 	for ( // Perform a loop and log each _MESSAGE
@@ -165,11 +165,11 @@ void ProgramCenter::SizeHook(
 	wxSizeEvent& _EVT
 ) {
 	/*
-		External sizers 
+		External sizers
 	*/
-		sTitleBar(); 
+		sTitleBar();
 		sResizeIcon();
 
-	// Finalize with refresh to main window 
+	// Finalize with refresh to main window
 	Refresh();
 }

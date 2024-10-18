@@ -11,21 +11,22 @@ class ProgramCenter : public wxFrame
 { public:
 	ProgramCenter(
 		const std::string& Name
-	); 
+	);
 
 private:
 /*
-	On Startup 
+	On Startup
 */
 	const void lConfig(
 		const std::vector<std::vector<std::string>>& _DATA_SET, const std::filesystem::path& _PATH
 	);
 
+
 	const void lWindowDefParams();
 	const void lDebug();
 	const void lSizeHook();
 	const void lTitleBar();
-	const void lResizeIcon(); 
+	const void lResizeIcon();
 
 	void kEVT(wxKeyEvent& _EVT);
 /*
@@ -45,17 +46,17 @@ private:
 	void DebugLogHook(wxTimerEvent& _EVT);
 	void SizeHook(wxSizeEvent& _EVT);
 /*
-	Sizers 
+	Sizers
 */
 	const void sTitleBar();
 	const void sResizeIcon();
 /*
-	Instances 
+	Instances
 */
 	wxTimer DebugLogHookTimer;
 	Framework::Config::File* Config;
 	Framework::Debug* _DEBUG = new Framework::Debug();
 
 	ProgramTitleBar* TitleBarInstance;
-	ProgramResizeIcon* ResizeIconInstance; 
+	ProgramResizeIcon* ResizeIconInstance;
 };
