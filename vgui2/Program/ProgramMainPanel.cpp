@@ -12,7 +12,7 @@ ProgramMainPanel::ProgramMainPanel(
 	wxFont _font2 = wxFont(10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 	_font2.SetFaceName("Menlo");
 	
-	wxFont _font3 = wxFont(14, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	wxFont _font3 = wxFont(9, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
 	_font3.SetFaceName("Menlo");
 
 	//_DEBUG->LogTaggedInt("y", this->GetPosition().y);
@@ -31,13 +31,13 @@ ProgramMainPanel::ProgramMainPanel(
 	_CoreList._LineIndexingActivatedLines = { 0 };
 	_CoreList._Buffer.push_back("123");
 	_CoreList._Buffer.push_back("nigger");
-	_CoreList._Buffer = Framework::File::Open("C:\\Users\\Survi\\source\\repos\\vgui2\\vgui2\\Program\\TextEditor\\TextEditor.cpp").Read().gVector();
+	_CoreList._Buffer = Framework::File::Open("C:\\vgui2\\TextEditor.cpp").Read().gVector();
+	
+
 	_CoreList.m_BufferSpacingY = _CoreList.m_LineIndexingSpacingY;
 	_CoreList._LayoutBufferFont = _font2;
 	_CoreList._LayoutBufferBackgroundColor = _CoreList._LayoutBackgroundColor;
 	_CoreList._LayoutBufferFontColor = wxColor(193, 198, 211);
-
-	
 
 	_CoreList._LayoutScrollbarsElementColorDeActivated = wxColor(77, 83, 98);
 	_CoreList._LayoutScrollbarsBackgroundColor = _CoreList._LayoutBackgroundColor;
@@ -50,6 +50,17 @@ ProgramMainPanel::ProgramMainPanel(
 
 	_CoreList._LayoutInfoFont = _font3;
 	_CoreList._LayoutInfoSpacingY = 8;
+
+	_CoreList._LayoutInfoBackgroundColor = wxColor(34, 37, 43);
+	_CoreList._LayoutInfoFontColor = wxColor(159, 165, 180);
+	_CoreList._LayoutInfoSeparatorColor = wxColor(24, 26, 31);
+	_CoreList._LayoutInfoSeparatorY = 1;
+	_CoreList._LayoutInfoElementSpacingX = 14;
+	_CoreList._LayoutInfoSpacingY = 8;
+
+	_CoreList._Buffer = Framework::Vector::g_WithProperTabulation(_CoreList._Buffer, _CoreList._LayoutCursorTabLength);
+	_CoreList._LayoutInfoElementCommentColor = wxColor(108, 157, 215);
+	_CoreList._LayoutInfoElementActiveBackgroundColor = wxColor(48, 51, 61);
 
 	m_TextEditor = new TextEditor(_CoreList);
 

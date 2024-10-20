@@ -44,15 +44,11 @@ class TextEditor :
 		wxColor _LayoutBufferChunkOutlineColor;
 		wxColor _LayoutInfoBackgroundColor;
 		wxColor _LayoutInfoFontColor; 
+		wxColor _LayoutInfoSeparatorColor;
+		wxColor _LayoutInfoElementCommentColor; 
+		wxColor _LayoutInfoElementActiveBackgroundColor;
 
-		enum m_LayoutInfoEndlineStandard
-		{
-			CRLF = 0, 
-			CR = 1, 
-			LF = 2
-		};
-
-		m_LayoutInfoEndlineStandard _LayoutInfoEndlineStandardCurrent = m_LayoutInfoEndlineStandard::CRLF;
+		std::string _LayoutInfoEndlineStandardCurrent = "CRLF";
 
 		std::vector<std::string> _Buffer; 
 
@@ -76,7 +72,9 @@ class TextEditor :
 		int _LayoutLineIndexingSpacingY = 8;
 		int _LayoutBufferSpacingY = 8;
 		int _LayoutInfoSpacingY = 10;
-
+		int _LayoutInfoSeparatorY = 1; 
+		int _LayoutInfoElementSpacingX = 4; 
+		int _LayoutInfoElementCommentSpacingX = 12; 
 
 		std::string _LayoutInfoCharSystem = "ASCII";
 		
@@ -156,6 +154,7 @@ private:
 		void hdl_ScrollbarsSetupCheckHK();
 		void hk_ScrollbarsCheck(wxTimerEvent& _Event);
 		void hdl_ScrollbarsUpdatePositions();
+		void hdl_ScrollbarsVisibility();
 
 		wxTimer m_ScrollbarsCheckTimer;
 
@@ -317,6 +316,7 @@ private:
 			m_LineIndexing = 2,
 			m_Cursor = 3,
             m_Global = 4,
+			m_Info = 5
 		};
 
 		void init_SmartRefresh();
@@ -331,7 +331,62 @@ private:
 
 		wxTimer m_SmartRefreshUpdateTimer;
 		std::vector<m_SmartRefreshObjects> m_SmartRefreshBuffer;
+	/* [=============================== _Info ===============================] */
+		void init_Info(); 
+		void hdl_InfoSetupElements(); 
 
+		struct m_InfoElement
+		{
+			enum m_LayoutPositions
+			{
+				m_FromLeft = 0, 
+				m_FromRight = 1
+			};
+			size_t m_CountForCurrentLayout;
+
+			m_LayoutPositions m_Layout; 
+			std::string m_Text;
+			std::string m_Comment; 
+
+			size_t m_Index;
+		};
+
+		void hk_InfoRender(
+			wxAutoBufferedPaintDC& _Canvas); 
+
+		void hk_InfoRenderBackground(wxAutoBufferedPaintDC& _Canvas);
+		void hk_InfoRenderSeparator(wxAutoBufferedPaintDC& _Canvas);
+		void hk_InfoRenderComment(wxAutoBufferedPaintDC& _Canvas);
+
+		void hdl_InfoDeactivateElement();
+		void hk_InfoActivateElement(wxMouseEvent& _Event);
+
+		void hk_InfoRenderElements(wxAutoBufferedPaintDC& _Canvas);
+		void hdl_InfoRenderElement(wxAutoBufferedPaintDC& _Canvas, const m_InfoElement& _Element);
+
+		void p_InfoElement(
+			const std::string& _Text, const std::string& _Comment, 
+			m_InfoElement::m_LayoutPositions _LayoutPosition
+		);
+
+		const size_t g_InfoElementCurrentLayoutCount(m_InfoElement::m_LayoutPositions _CurrentLayout) const;
+		
+		const wxPoint g_InfoElementCenteredTextPosition(const m_InfoElement& _Element);
+		const wxPoint g_InfoElementCommentCenteredTextPosition(const m_InfoElement& _Element);
+
+		Framework::Geometry::BoundingBox g_InfoElementBB(const m_InfoElement& _Element); 
+		Framework::Geometry::BoundingBox g_InfoSeparatorBB();
+		Framework::Geometry::BoundingBox g_InfoElementCommentBB(const m_InfoElement& _Element);
+
+		const int g_InfoElementPushX(const m_InfoElement& _Element);
+
+		std::vector<m_InfoElement> m_InfoElements;
+		size_t m_InfoElementActivated = -1;
+	/* [=============================== _MouseMotionHook ===============================] */
+		void init_MouseMotionHook();
+
+		void hk_MouseMotion(
+			wxMouseEvent& _Event);
 
 };
 

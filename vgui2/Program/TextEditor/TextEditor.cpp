@@ -14,6 +14,8 @@
 			init_MouseWheelGlobalActions();
 			init_Cursor();
 			init_OnChar();
+			init_Info();
+			init_MouseMotionHook(); 
             init_SmartRefresh();
 		} catch (const std::exception& /* Pass the exception*/
 			_exc) { throw _exc; }
@@ -115,6 +117,7 @@
 			hk_BufferRender(_Canvas);
 			hk_LineIndexingRender(_Canvas);
 			hk_CursorRender(_Canvas);
+			hk_InfoRender(_Canvas);
 		} catch (const std::exception& ex) { cr_List._Debug->log_TaggedStdException(
 			__FUNCTION__, ex
 		); }
@@ -341,6 +344,17 @@
 			);
 	}
 
+	void TextEditor::hdl_ScrollbarsVisibility()
+	{
+		const std::array<int, 2> _MaximalScroll = g_BufferMaximalScroll();
+
+		bool _VerticalVisible = (_MaximalScroll[1] > 0);
+		bool _HorizontalVisible = (_MaximalScroll[0] > 0);
+
+		m_ScrollbarsVertical->Show(_VerticalVisible);
+		m_ScrollbarsHorizontal->Show(_HorizontalVisible);
+	}
+
 	void TextEditor::hdl_ScrollbarsUpdatePositions()
 	{ /* Update positions & sizes of scrollbas */
 		_LayoutPositions _Layout = g_LayoutPositions(); 
@@ -375,7 +389,10 @@
 
 	void TextEditor::hk_ScrollbarsCheck(
 		wxTimerEvent& _Event)
-	{ /* Scrollbar -> _Buffer | Scroll update */
+	{ /* Scrollbar -> _Buffer | Scroll update &* Visibility check */
+		/* Visiblity handler */
+		hdl_ScrollbarsVisibility(); 
+		/* Scroll update */
 		double _x, _y; 
 		/* Obtain raw */
 		_x = m_ScrollbarsHorizontal->gScrollProcentage();
@@ -427,7 +444,7 @@
 		/* Draw Activated Background */
 		if (cr_List._BufferActivatedLine
 			== -1) return;
-
+		
 		_Canvas.SetPen(cr_List._LayoutBufferActivatedLineColor);
 		_Canvas.SetBrush(cr_List._LayoutBufferActivatedLineColor);
 		_Canvas.DrawRectangle(g_BufferLineBBAtGiven(cr_List._BufferActivatedLine).gRect());
@@ -1436,6 +1453,7 @@
 	void TextEditor::hdl_CursorGlobalChange()
 	{ /* Handle cursor global changes */
 		cr_List._BufferActivatedLine = cr_List._CursorAt[0];
+		cr_List._LineIndexingActivatedLines = { cr_List._BufferActivatedLine };
 		hdl_CursorGlobalChangeModifyBufferScroll(); 
 
         p_SmartRefreshObjects({ m_Global });
@@ -1741,7 +1759,9 @@
 
 	void TextEditor::hdl_SmartRefreshUpdate()
 	{ /* Update performer */
-        std::array<bool, 3> _RefreshObjects;
+		const size_t _RefreshObjectsCount = 4;
+
+        std::array<bool, _RefreshObjectsCount> _RefreshObjects;
         /* Force false on all */
         for (size_t _Iterator = 0; _Iterator <
             _RefreshObjects.size(); _Iterator++)
@@ -1771,7 +1791,7 @@
         }
 
         /* Collect refreshments */
-        std::array<std::array<int, 4>, 3> _Refreshments;
+        std::array<std::array<int, 4>, _RefreshObjectsCount> _Refreshments;
         _LayoutPositions _Layout = g_LayoutPositions();
 
         Framework::Geometry::BoundingBox _CursorOutlineBB = g_CursorOutlineBB();
@@ -1779,6 +1799,7 @@
         _Refreshments[0] = _Layout._BufferBB;
         _Refreshments[1] = _Layout._LineIndexingBB;
         _Refreshments[2] = _Layout.g_PackedArrayFromBB(_CursorOutlineBB);
+		_Refreshments[3] = _Layout._InfoBB;
 
         /* Refresh */
         size_t _RefreshIterator = 0; 
@@ -1798,3 +1819,422 @@
         } /* Clear buffer */
         m_SmartRefreshBuffer = {}; 
 	}
+
+	/* [============================== _Info ===============================] */
+	void TextEditor::init_Info()
+	{ /* _Info initializer */
+		//hdl_InfoSetupElements();
+	}
+
+	void TextEditor::hdl_InfoSetupElements()
+	{
+		m_InfoElements = {};
+
+		p_InfoElement(
+			cr_List._LayoutInfoCharSystem, "@Character set currently in use.", m_InfoElement::m_FromRight
+		);
+
+		p_InfoElement(
+			cr_List._LayoutInfoEndlineStandardCurrent, "@End-line system currently in use.", m_InfoElement::m_FromRight
+		);
+
+		p_InfoElement(
+			std::to_string(cr_List._CursorAt[0]) + ":" + std::to_string(cr_List._CursorAt[1]), "@char:line", m_InfoElement::m_FromLeft
+		);
+
+		p_InfoElement(
+			"SPACE", "@Current character for tabulation.", m_InfoElement::m_FromRight
+		);
+	}
+
+	void TextEditor::hk_InfoRender(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render hook for info */
+		try {
+			hdl_InfoSetupElements();
+
+			hk_InfoRenderBackground(_Canvas);
+			hk_InfoRenderSeparator(_Canvas);
+			hk_InfoRenderElements(_Canvas);
+			hk_InfoRenderComment(_Canvas);
+		} catch (const std::exception& _ex) { cr_List._Debug->log_TaggedStdException(
+			__FUNCTION__, _ex
+		); }
+	}
+
+	void TextEditor::hk_InfoRenderComment(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render Current comment */
+		const size_t _NoCommentActive = -1; 
+
+		if (m_InfoElementActivated
+			== _NoCommentActive) return;
+		m_InfoElement& _Element = m_InfoElements[m_InfoElementActivated];
+
+		const wxPoint _TextPosition = g_InfoElementCommentCenteredTextPosition(
+			_Element);
+		const wxRect _BackgroundRect = g_InfoElementCommentBB(_Element).gRect();
+		/* Set Clipping Region */
+		_Canvas.SetClippingRegion(_BackgroundRect);
+		/* Draw Background */
+		_Canvas.SetBrush(cr_List._LayoutInfoBackgroundColor);
+		_Canvas.SetPen(cr_List._LayoutInfoBackgroundColor);
+
+		_Canvas.DrawRectangle(_BackgroundRect);
+		/* Draw text */
+		_Canvas.SetTextForeground(cr_List._LayoutInfoElementCommentColor);
+		_Canvas.DrawText(_Element.m_Comment, _TextPosition);
+		/* Finalize */
+		_Canvas.DestroyClippingRegion();
+	}
+
+	void TextEditor::hk_InfoRenderBackground(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render background */
+		/* Setup */
+		_Canvas.SetBrush(cr_List._LayoutInfoBackgroundColor);
+		_Canvas.SetPen(cr_List._LayoutInfoBackgroundColor);
+
+		/* Draw */
+		_LayoutPositions _Layout = g_LayoutPositions();
+		
+		_Canvas.DrawRectangle(
+			_Layout.g_BBFromPackedArray(_Layout._InfoBB).gRect()
+		);
+	}
+
+	void TextEditor::hk_InfoRenderSeparator(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render Separator */
+		/* Setup */
+		_Canvas.SetBrush(cr_List._LayoutInfoSeparatorColor);
+		_Canvas.SetPen(cr_List._LayoutInfoSeparatorColor);
+
+		/* Render */
+		_Canvas.DrawRectangle(g_InfoSeparatorBB().gRect());
+	}
+
+	void TextEditor::p_InfoElement(
+		const std::string& _Text, const std::string& _Comment,
+		m_InfoElement::m_LayoutPositions _LayoutPosition)
+	{ /* Push element to m_InfoElements*/
+		/* Assemble */
+		m_InfoElement _InfoElement; 
+		_InfoElement.m_Layout = _LayoutPosition;
+		_InfoElement.m_Comment = _Comment;
+		_InfoElement.m_Text = _Text;
+		_InfoElement.m_CountForCurrentLayout = g_InfoElementCurrentLayoutCount(_LayoutPosition);
+		_InfoElement.m_Index = m_InfoElements.size();
+		/* Push */
+		m_InfoElements.push_back(_InfoElement);
+	}
+
+	const size_t TextEditor::g_InfoElementCurrentLayoutCount(
+		m_InfoElement::m_LayoutPositions _CurrentLayout) const 
+	{ /* Get & Return */
+		size_t _CountForCurrentLayout = 0;
+		for (m_InfoElement _Element : m_InfoElements)
+		{ /* Get count for current layout */
+			if (_Element.m_Layout == _CurrentLayout)
+				_CountForCurrentLayout++;
+		} 
+		return _CountForCurrentLayout;
+	}
+
+	void TextEditor::hk_InfoRenderElements(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render Elements */
+		for (const m_InfoElement _Element : m_InfoElements)
+		{ /* Render */
+			hdl_InfoRenderElement(_Canvas, _Element);
+		}
+	}
+
+	void TextEditor::hdl_InfoDeactivateElement()
+	{
+		if (m_InfoElementActivated == -1)
+			return; 
+		/* Deaactivate & Refresh */
+		m_InfoElementActivated = -1;
+		p_SmartRefreshObjects({ m_Info });
+	}
+
+	void TextEditor::hk_InfoActivateElement(
+		wxMouseEvent& _Event)
+	{ /* Activation of a element */
+		const wxPoint _MousePosition = _Event.GetPosition();
+
+		_LayoutPositions _Layout = g_LayoutPositions();
+		Framework::Geometry::BoundingBox _InfoBB = _Layout.g_BBFromPackedArray(
+			_Layout._InfoBB);
+
+		/* Check if mouse is in BB box of _Info */
+		if (Framework::Geometry::cBounds(
+			_MousePosition, _InfoBB.gStarting(), _InfoBB.gSize()
+		) == false)
+		{ /* Deactivate element if active & return */
+			hdl_InfoDeactivateElement(); return; 
+		}
+
+		/* Iterate throught elements and check whatever position is matching */
+		for (
+			const m_InfoElement& _Element : m_InfoElements
+			)
+		{ /* Check if mouse is in bounding box of element */
+			Framework::Geometry::BoundingBox _ElementBoundingBox =
+				g_InfoElementBB(_Element);
+
+			if (Framework::Geometry::cBounds(
+				_MousePosition, _ElementBoundingBox.gStarting(), _ElementBoundingBox.gSize()
+			) == true)
+			{ /* Activate elements & refresh & return */
+				m_InfoElementActivated = _Element.m_Index;
+
+				p_SmartRefreshObjects({ m_Info });
+				/* Abort */
+				return;
+			}
+		} 
+		/* Deactivate element if active */
+		hdl_InfoDeactivateElement();
+	}
+
+	void TextEditor::hdl_InfoRenderElement(
+		wxAutoBufferedPaintDC& _Canvas, const m_InfoElement& _Element)
+	{ /* Render singular element */
+		/* Render colored background if active */
+		if (_Element.m_Index ==
+			m_InfoElementActivated)
+		{ /* Render colored background */
+			_Canvas.SetPen(cr_List._LayoutInfoElementActiveBackgroundColor);
+			_Canvas.SetBrush(cr_List._LayoutInfoElementActiveBackgroundColor);
+
+			const wxRect _ColoredBackgroundRect = g_InfoElementBB(
+				_Element
+			).gRect();
+
+			_Canvas.DrawRectangle(_ColoredBackgroundRect);
+		}
+
+		/* Render Text */
+		_Canvas.SetFont(cr_List._LayoutInfoFont);
+		_Canvas.SetTextForeground(cr_List._LayoutInfoFontColor);
+
+		_Canvas.DrawText(_Element.m_Text, g_InfoElementCenteredTextPosition(_Element));
+	}
+
+	const wxPoint TextEditor::g_InfoElementCenteredTextPosition(
+		const m_InfoElement& _Element)
+	{ /* Calculate & Return */
+		Framework::Geometry::BoundingBox _ElementBB = g_InfoElementBB(_Element);
+		const wxPoint _ElementBBStarting = _ElementBB.gStarting();
+
+		/* Calculate */
+			int _x, _y;
+
+			_x = _ElementBBStarting.x;
+			_y = _ElementBBStarting.y; 
+
+			_x += (cr_List._LayoutInfoElementSpacingX / 2);
+			_y += (cr_List._LayoutInfoSpacingY / 2);
+		return wxPoint { _x, _y };
+	}
+
+	Framework::Geometry::BoundingBox TextEditor::g_InfoElementCommentBB(
+		const m_InfoElement& _Element)
+	{ /* Calculate & Return */
+		int _CharSizeX, _CharSizeY;
+		int _sx, _sy;
+		int _x, _y; 
+		int _fx, _fy;
+
+		/* Get char sizes */
+		wxMemoryDC _MemoryCanvas; 
+		_MemoryCanvas.SetFont(cr_List._LayoutInfoFont);
+
+		const wxSize _CharSize = _MemoryCanvas.GetTextExtent("a");
+		
+		_CharSizeX = _CharSize.x;
+		_CharSizeY = _CharSize.y; 
+		/* Get sx & sy */
+		_LayoutPositions _Layout = g_LayoutPositions();
+
+		Framework::Geometry::BoundingBox _InfoBB = _Layout.g_BBFromPackedArray(
+			_Layout._InfoBB);
+		Framework::Geometry::BoundingBox _ElementBB = g_InfoElementBB(_Element);
+
+		size_t _HighestCount = 0; 
+		m_InfoElement _ElementFound;
+
+		for (const m_InfoElement _IterationElement : m_InfoElements)
+		{
+			if (_IterationElement.m_CountForCurrentLayout > _HighestCount
+				&& _IterationElement.m_Layout == _Element.m_Layout)
+			{
+				_HighestCount = _IterationElement.m_CountForCurrentLayout;
+				_ElementFound = _IterationElement;
+			}
+		}
+		
+		_sy = (_ElementBB.gSize().y);
+		_sx = (_InfoBB.gSize().x);
+		_sx -= std::abs((g_InfoElementPushX(_ElementFound)));
+		_sx -= g_InfoElementBB(_ElementFound).gSize().x; 
+		_sx -= _ElementBB.gSize().x;
+
+		//cr_List._Debug->LogTaggedInt(__FUNCTION__, g_InfoElementPushX(_ElementFound));
+
+		if (_Element.m_Layout ==
+			m_InfoElement::m_LayoutPositions::m_FromLeft
+			)
+		{ /* Comment to right */
+			_x = _InfoBB.gFinal().x - _sx;
+		}
+		else
+		{ /* Comment to left */
+			_x = _InfoBB.gStarting().x;
+		}
+
+		_y = _ElementBB.gStarting().y;
+		/* Get _fx & _sx */
+		_fx = (_x + _sx);
+		_fy = (_y + _sy);
+
+		/* Return */
+		return { wxPoint { _x, _y}, wxPoint {_fx, _fy} };
+	}
+
+	const int TextEditor::g_InfoElementPushX(
+		const m_InfoElement& _Element)
+	{
+		int _PushX = 0;
+		wxMemoryDC _MemoryCanvas;
+		_MemoryCanvas.SetFont(cr_List._LayoutInfoFont);
+
+		const int _InfoCharSizeX = _MemoryCanvas.GetTextExtent("a").x;
+		/* Iterate to determinate PushX */
+		for (const m_InfoElement& _CurrentElement :
+			m_InfoElements)
+		{ /* Check if needed to loop */
+			if (_Element.m_CountForCurrentLayout
+				== 0) break;
+			/* Check for layout & count */
+			if (_CurrentElement.m_Layout == _Element.m_Layout &&
+				_CurrentElement.m_CountForCurrentLayout < _Element.m_CountForCurrentLayout
+				)
+			{ /* Increment value */
+				_PushX += ((_InfoCharSizeX * _CurrentElement.m_Text.length()) + cr_List._LayoutInfoElementSpacingX);
+			}
+		}
+		/* Check for layout integrity */
+		if (_Element.m_Layout ==
+			m_InfoElement::m_LayoutPositions::m_FromRight)
+		{ /* Reverse _PushX */
+			_PushX = -_PushX;
+		}
+
+		return _PushX;
+	}
+
+	const wxPoint TextEditor::g_InfoElementCommentCenteredTextPosition(
+		const m_InfoElement& _Element)
+	{ /* Calculate & Return */
+		Framework::Geometry::BoundingBox _CommentBB = g_InfoElementCommentBB(_Element);
+		const wxPoint _CommentBBStarting = _CommentBB.gStarting();
+
+		wxMemoryDC _MemoryCanvas; 
+		_MemoryCanvas.SetFont(cr_List._LayoutInfoFont);
+
+		const int _CharSizeX = _MemoryCanvas.GetTextExtent("a").x;
+		/* Calculate */
+			int _x, _y;
+
+			_y = _CommentBBStarting.y; 
+			_x = ((_Element.m_Layout == m_InfoElement::m_FromRight) ?
+				_CommentBBStarting.x :
+				_CommentBB.gFinal().x
+				);
+
+			_y += cr_List._LayoutInfoSpacingY / 2; 
+
+			_x += ((_Element.m_Layout == m_InfoElement::m_FromLeft) ?
+				(-cr_List._LayoutInfoElementCommentSpacingX - (_CharSizeX * _Element.m_Comment.length())) :
+				cr_List._LayoutInfoElementCommentSpacingX
+				);
+
+					
+		return wxPoint { _x, _y };
+	} 
+
+	Framework::Geometry::BoundingBox TextEditor::g_InfoElementBB(
+		const m_InfoElement& _Element)
+	{ /* Calculate & Return */
+		/* _Push X */
+		int _PushX = g_InfoElementPushX(_Element);
+		wxMemoryDC _MemoryCanvas; 
+		_MemoryCanvas.SetFont(cr_List._LayoutInfoFont);
+
+		const int _InfoCharSizeX = _MemoryCanvas.GetTextExtent("a").x;
+
+		_LayoutPositions _Layout = g_LayoutPositions(); 
+
+		Framework::Geometry::BoundingBox _InfoBB = _Layout.g_BBFromPackedArray(
+			_Layout._InfoBB);
+		const wxPoint _InfoBBStarting = _InfoBB.gStarting();
+		const wxPoint _InfoBBFinal = _InfoBB.gFinal();
+
+		bool _LayoutFromLeft = (_Element.m_Layout == m_InfoElement::m_LayoutPositions::m_FromLeft);
+		/* Calculate */ 
+			int _x, _y, _fx, _fy, _sx;
+
+			_sx = (cr_List._LayoutInfoElementSpacingX + (_InfoCharSizeX * _Element.m_Text.length()));
+
+			_x = (_LayoutFromLeft ? _InfoBBStarting.x : _InfoBBFinal.x - _sx) + _PushX;
+			_y = (_InfoBBStarting.y + cr_List._LayoutInfoSeparatorY);
+			
+			_fx = (_x + _sx);
+			_fy = _InfoBBFinal.y;
+		/* Return */
+		return { wxPoint { _x, _y }, wxPoint { _fx, _fy} };
+	}
+
+	Framework::Geometry::BoundingBox TextEditor::g_InfoSeparatorBB()
+	{ /* Calculate & Return */
+		_LayoutPositions _Layout = g_LayoutPositions();
+
+		Framework::Geometry::BoundingBox _InfoBB = _Layout.g_BBFromPackedArray(
+			_Layout._InfoBB);
+		const wxPoint _InfoBBStarting = _InfoBB.gStarting();
+		/* Calculate */
+			int _x, _y, _fx, _fy;
+
+			_x = _InfoBBStarting.x;
+			_y = _InfoBBStarting.y;
+
+			_fx = _x; 
+			_fy = _y;
+
+			_fy += cr_List._LayoutInfoSeparatorY;
+			_fx += _InfoBB.gSize().x;
+		/* Return */
+		return { wxPoint { _x, _y }, wxPoint { _fx, _fy } };
+	}
+
+	/* [=============================== _MouseMotionHook ===============================] */
+	void TextEditor::init_MouseMotionHook()
+	{
+		Bind(wxEVT_MOTION, &TextEditor::hk_MouseMotion, this);
+		Bind(wxEVT_LEAVE_WINDOW, &TextEditor::hk_MouseMotion, this);
+	}
+
+	void TextEditor::hk_MouseMotion(
+		wxMouseEvent& _Event)
+	{ /* Main _MouseMotion hook for this class */
+		try 
+		{
+			hk_InfoActivateElement(_Event);
+		} catch (const std::exception& _ex) { cr_List._Debug->log_TaggedStdException(
+			__FUNCTION__, _ex
+		); }
+	}
+

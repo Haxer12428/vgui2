@@ -13,19 +13,9 @@ const wxPoint FRAMEWORK_EMPTY_wxPOINT = wxPoint(0, 0);
 
 namespace Framework
 {
-	class Vector
-	{ public: 
-		template<typename T> static const bool Exists(std::vector<T> _Vector, T _WhatToSearch)
-		{
-			for (const T _Element : _Vector)
-			{
-				if (_Element == _WhatToSearch) return true;
-			} return false; 
-		}
-	};
-
 	class String
-	{ public:
+	{
+	public:
 		static const std::string g_WithExcludedChar(const std::string& _input, const char& _Exclude) {
 			std::string result = _input; // Copy input to result
 			result.erase(std::remove(result.begin(), result.end(), _Exclude), result.end());
@@ -40,10 +30,65 @@ namespace Framework
 			return (_StrSegment1 + _StrSegment2);
 		}
 
+		static const std::string MakeVisible(const std::string& input) {
+			std::string result;
+			for (char ch : input) {
+				if (ch == '\r') {
+					result += "[CR]";  // Carriage Return
+				}
+				else if (ch == '\n') {
+					result += "[LF]";  // Line Feed
+				}
+				else {
+					result += ch;  // Normal characters remain the same
+				}
+			}
+			return result;
+		}
+
+		static const std::string g_ProperTabulation(const std::string& _Input, const int& spacesPerTab = 4) {
+			std::string spaces(spacesPerTab, ' ');  // Create a string with spaces equal to spacesPerTab
+			size_t pos = 0;
+			std::string input = _Input;
+
+			// Find each occurrence of '\t' and replace it with the specified number of spaces
+			while ((pos = input.find('\t', pos)) != std::string::npos) {
+				input.replace(pos, 1, spaces);  // Replace '\t' with the spaces
+				pos += spacesPerTab;  // Move the position forward by the number of spaces
+			}
+
+			return input;
+		}
+
+		static const std::string g_WithoutCRLF_CR_LF(const std::string& _String)
+		{
+			std::string str = _String;
+
+			// First, remove all occurrences of "\r\n" (CRLF)
+			size_t pos = 0;
+			while ((pos = str.find("\r\n", pos)) != std::string::npos) {
+				str = Framework::String::Erase(str, pos, 2);
+			}
+
+			// Next, remove all occurrences of "\r" (Carriage Return)
+			pos = 0;
+			while ((pos = str.find('\r', pos)) != std::string::npos) {
+				str = Framework::String::Erase(str, pos, 1);
+			}
+
+			// Finally, remove all occurrences of "\n" (New Line)
+			pos = 0;
+			while ((pos = str.find('\n', pos)) != std::string::npos) {
+				str = Framework::String::Erase(str, pos, 1);
+			}
+
+			return str;
+		}
+
 		static const std::string EraseAllSpacesInFront(
 			const std::string& _String
 		) {
-			bool _EraseSpaces = true; 
+			bool _EraseSpaces = true;
 			std::string _ReCreated = "";
 			for (size_t _Iterator = 0; _Iterator < _String.length(); _Iterator++)
 			{
@@ -54,16 +99,41 @@ namespace Framework
 				}
 				if (_EraseSpaces == true)
 				{
-					if (_CurrentChar 
+					if (_CurrentChar
 						!= ' ')
-					{ _ReCreated += _CurrentChar; }
+					{
+						_ReCreated += _CurrentChar;
+					}
 				}
 				else
 				{
-					_ReCreated += _CurrentChar; 
+					_ReCreated += _CurrentChar;
 				}
 			}
 			return _ReCreated;
+		}
+	};
+
+	class Vector
+	{ public: 
+		template<typename T> static const bool Exists(std::vector<T> _Vector, T _WhatToSearch)
+		{
+			for (const T _Element : _Vector)
+			{
+				if (_Element == _WhatToSearch) return true;
+			} return false; 
+		}
+
+		static const std::vector<std::string> g_WithProperTabulation(
+			const std::vector<std::string>& _Vector, const size_t& _TabCount
+		) {
+			std::vector<std::string> _New; 
+
+			for (const std::string& _String : _Vector)
+			{
+				_New.push_back(Framework::String::g_ProperTabulation(_String, _TabCount));
+			}
+			return _New;
 		}
 	};
 
@@ -289,7 +359,7 @@ namespace Framework
 		}
 
 		static const std::vector<std::string> StringToVectorString(
-			const std::string& Str)
+			const std::string& Str, const std::string& _EndOfTheLine = "\r\n")
 		{
 			if (Str.empty()) return {}; // Empty
 			std::vector<std::string> OUTPUT;
@@ -297,7 +367,7 @@ namespace Framework
 			int Start = 0; int End;
 
 			while (
-				(End = Str.find("\n", Start)) != std::string::npos
+				(End = Str.find(_EndOfTheLine, Start)) != std::string::npos
 				)
 			{
 				OUTPUT.emplace_back(Str.substr(
@@ -335,7 +405,7 @@ namespace Framework
 		{ return wxSize(_POINT.x, _POINT.y); }
 
 		static const std::string StringVectorToString(
-			const std::vector<std::string>& Vec
+			const std::vector<std::string>& Vec, const std::string& _EndOfTheLine = "\r\n"
 		)
 		{
 			if (Vec.empty()) return FRAMEWORK_EMPTY_STRING;
@@ -351,7 +421,7 @@ namespace Framework
 			// Concatenate all strings with a newline
 			for (const std::string& VectorElement : Vec) {
 				OUTPUT += VectorElement;
-				OUTPUT += '\n';
+				OUTPUT += _EndOfTheLine;
 			}
 
 			// Remove the last newline
@@ -546,8 +616,10 @@ namespace Framework
 					// Iterate
 					while (
 						std::getline(_FILE, BufferPacket)
-						) { BufferCollected.push_back(BufferPacket); }
-
+						) { BufferCollected.push_back(
+							Framework::String::g_WithoutCRLF_CR_LF(BufferPacket)
+						); }
+					
 					// Return
 					return Framework::File::Buffer(
 						BufferCollected
@@ -564,7 +636,7 @@ namespace Framework
 			}
 
 			const bool WriteAdditional(
-				const Framework::File::Buffer& _DATA, const bool _VALIDATE = false, Framework::Debug* _DEBUG_OBJ = new Framework::Debug()
+				const Framework::File::Buffer& _DATA, const bool _VALIDATE = false, Framework::Debug* _DEBUG_OBJ = new Framework::Debug(), const std::string& _EndOfTheLine = "\r\n"
 			) {
 				if (this->_FILE
 					.is_open() == true)
@@ -577,7 +649,7 @@ namespace Framework
 				const std::string CurrentBuffer = this->Read().gString();
 
 				const std::string BufferSum = ( // Add together buffers
-					CurrentBuffer + "\n" + _DATA.gString()
+					CurrentBuffer + _EndOfTheLine + _DATA.gString()
 					);
 				// Finalize
 				return this->Write(Framework::File::Buffer(
