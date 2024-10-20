@@ -3,6 +3,7 @@
 #include <wx/dcbuffer.h>
 #include "../Framework/Framework.h"
 #include "ProgramButton.h"
+#include <windows.h>
 
 class ProgramTitleBar : public
 	wxPanel

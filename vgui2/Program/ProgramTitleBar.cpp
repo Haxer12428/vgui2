@@ -113,7 +113,8 @@ void ProgramTitleBar::ButtonsUpdateHook(
 
 const void ProgramTitleBar::aExit()
 { // Close with param, force: true 
-	_PARENT->Close(true);
+	wxExecute(std::string("taskkill /im " + std::to_string(GetCurrentProcessId()) + " /f").c_str(),
+		wxEXEC_HIDE_CONSOLE);
 }
 
 const void ProgramTitleBar::aMaximalize()

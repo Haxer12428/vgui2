@@ -92,6 +92,7 @@ class TextEditor :
 			_CoreList& cr_List
 		);
 	
+		~TextEditor();
 	_CoreList cr_List;
 private:
 	/* [=============================== _LayoutPositions ===============================] */
@@ -387,6 +388,9 @@ private:
 
 		void hk_MouseMotion(
 			wxMouseEvent& _Event);
+	/* [=============================== _OnExit ===============================] */
+	void init_OnExit();
+	void hk_OnExit(wxCloseEvent& _Event);
 
 };
 

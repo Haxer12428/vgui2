@@ -17,8 +17,14 @@
 			init_Info();
 			init_MouseMotionHook(); 
             init_SmartRefresh();
+			init_OnExit();
 		} catch (const std::exception& /* Pass the exception*/
 			_exc) { throw _exc; }
+	}
+
+	TextEditor::~TextEditor()
+	{
+		cr_List._Buffer = {};
 	}
 
 /* [=============================== Layout Positions ===============================] */
@@ -109,7 +115,7 @@
 	void TextEditor::hk_Render(
 		wxPaintEvent& _event)
 	{ /* Render hook operating on wxAutoBufferedDC */
-		try { 
+		try {
 			wxAutoBufferedPaintDC _Canvas{ this };
 
 			/* Rendering calls */
@@ -2238,3 +2244,16 @@
 		); }
 	}
 
+	/* [=============================== _OnExit ===============================] */
+	void TextEditor::init_OnExit()
+	{
+		//GetParent()->Bind(wxEVT_CLOSE_WINDOW, &TextEditor::hk_OnExit, this);
+	}
+
+	void TextEditor::hk_OnExit(
+		wxCloseEvent& _Event)
+	{ 
+		//wxLogMessage("destructor called");
+
+		//delete this;
+	}
