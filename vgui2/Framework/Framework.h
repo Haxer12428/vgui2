@@ -26,6 +26,12 @@ namespace Framework
 
 	class String
 	{ public:
+		static const std::string g_WithExcludedChar(const std::string& _input, const char& _Exclude) {
+			std::string result = _input; // Copy input to result
+			result.erase(std::remove(result.begin(), result.end(), _Exclude), result.end());
+			return result;
+		}
+
 		static const std::string Erase(
 			const std::string& _String, const size_t& _Where, const size_t& _Count
 		) {

@@ -20,4 +20,7 @@ class ProgramMainPanel : public wxPanel
 	);
 
 private:
+	TextEditor* m_TextEditor;
+
+	void hk_OnSize(wxSizeEvent& _Event);
 };

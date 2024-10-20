@@ -49,6 +49,20 @@
 		_Positions._LineIndexingBB[2] = (_Positions._LineIndexingBB[0] + _LineIndexingSX);
 		_Positions._LineIndexingBB[3] = (_Positions._LineIndexingBB[1] + _LineIndexingSY);
 
+		/* Info */
+		wxMemoryDC _InfoMemoryCanvas;
+		_InfoMemoryCanvas.SetFont(cr_List._LayoutInfoFont);
+		
+		const int _InfoSY = (cr_List._LayoutInfoSpacingY 
+			+ _InfoMemoryCanvas.GetTextExtent("a").y);
+
+		_Positions._InfoBB[0] = _Positions._LineIndexingBB[1];
+		_Positions._InfoBB[1] = GetSize().y - _InfoSY;
+		_Positions._InfoBB[2] = GetSize().x; 
+		_Positions._InfoBB[3] = GetSize().y; 
+
+
+
 		/* Scrollbars */
 			/* Vertical Scrollbar */
 			_Positions._VerticalScrollbarBB[0] = (_GlobalSize.x - cr_List._LayoutScrollbarsAxisLength);
@@ -58,11 +72,11 @@
 				+ cr_List._LayoutScrollbarsAxisLength;
 
 			_Positions._VerticalScrollbarBB[3] = _Positions._VerticalScrollbarBB[1] 
-				+ (_GlobalSize.y - cr_List._LayoutScrollbarsAxisLength);
+				+ (_Positions._InfoBB[1] - cr_List._LayoutScrollbarsAxisLength);
 
 			/* Horizontal Scrollbar*/
 			_Positions._HorizontalScrollbarBB[0] = (_Positions._LineIndexingBB[2]);
-			_Positions._HorizontalScrollbarBB[1] = (_GlobalSize.y - cr_List._LayoutScrollbarsAxisLength);
+			_Positions._HorizontalScrollbarBB[1] = (_Positions._InfoBB[1] - cr_List._LayoutScrollbarsAxisLength);
 
 			_Positions._HorizontalScrollbarBB[2] = _Positions._HorizontalScrollbarBB[0] +
 				((_GlobalSize.x - _Positions._LineIndexingBB[2]) - cr_List._LayoutScrollbarsAxisLength);
@@ -76,7 +90,7 @@
 				- _Positions._LineIndexingBB[0] - _Positions._VerticalScrollbarBB[0])
 			);
 		const int _BufferSY = (
-			_GlobalSize.y - (_Positions._HorizontalScrollbarBB[3] - _Positions._HorizontalScrollbarBB[1])
+			_Positions._InfoBB[1] - (_Positions._HorizontalScrollbarBB[3] - _Positions._HorizontalScrollbarBB[1])
 			);
 		_Positions._BufferBB[0] = _Positions._LineIndexingBB[2]; 
 		_Positions._BufferBB[1] = 0; 
@@ -105,7 +119,7 @@
 			hk_LineIndexingRender(_Canvas);
 			hk_CursorRender(_Canvas);
 		} catch (const std::exception& ex) { cr_List._Debug->log_TaggedStdException(
-			"TextEditor::hk_Render", ex
+			__FUNCTION__, ex
 		); }
 	}
 /* [=============================== _Background ===============================] */
@@ -176,6 +190,13 @@
 			_Layout._LineIndexingBB);
 		/* Iterate and check what to draw and with what color */
 		const std::array<size_t, 2> _IterationRange = g_LineIndexingRenderingRange();
+
+		/* Check for font size if its equal to smallest abort drawing numbers */
+		const int _SmallestFontSize = 1; 
+		const int _CurrentFontSize = _Canvas.GetFont().GetPointSize(); 
+
+		if (_CurrentFontSize
+			== _SmallestFontSize) return;
 
 		for (size_t _Number = _IterationRange[0]; _Number <=
 			_IterationRange[1]; _Number++)
@@ -387,13 +408,10 @@
 		_Canvas.DrawRectangle(g_BufferLineBBAtGiven(cr_List._BufferActivatedLine).gRect());
 	}
 
-	void TextEditor::hk_BufferRenderText(
+	void TextEditor::hdl_BufferRenderTextReal(
 		wxAutoBufferedPaintDC& _Canvas)
-	{ /* Render Text */
-		/* Setup */
-		_Canvas.SetFont(cr_List._LayoutBufferFont);
+	{ /* Rende real text */
 		_Canvas.SetTextForeground(cr_List._LayoutBufferFontColor);
-		_Canvas.SetTextBackground(cr_List._LayoutBufferFontColor);
 
 		/* Iterate throught the range & render */
 		const std::array<size_t, 2> _RenderingRange = g_BufferRenderingRange();
@@ -407,8 +425,146 @@
 				_Iterator);
 			/* Render */
 			_Canvas.DrawText(
-				_Element, _Position);
+				_Element, _Position.x, _Position.y);
 		}
+	}
+
+	void TextEditor::hdl_BufferRenderTextBlocks(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render blocks */
+		const std::array<size_t, 2> _RenderingRange = g_BufferRenderingRange(); 
+
+		/* Calculate chunk params */
+		const size_t _RenderingRangeSize = (_RenderingRange[1] - _RenderingRange[0] + 1);
+		const size_t _ChunksAmount = 256;
+
+		const size_t _ChunkSize = std::ceil(static_cast<double>(
+			_RenderingRangeSize) / _ChunksAmount);
+
+		/* Get generated chunks */
+		std::vector<std::array<size_t, 2>>
+			_Chunks = g_BufferGeneratedChunks(
+				_RenderingRange, _ChunksAmount, _ChunkSize
+			);
+
+		/* Render Chunks */
+		hdl_BufferRenderTextBlocksRenderChunks(
+			_Canvas, _Chunks, _ChunkSize
+		);
+	}
+
+	void TextEditor::hdl_BufferRenderTextBlocksRenderChunks(
+		wxAutoBufferedPaintDC& _Canvas, const std::vector<std::array<size_t, 2>>& _Chunks, const size_t& _ChunkSize)
+	{ /* Chunks rendering */
+		/* Setup canvas */
+		_Canvas.SetPen(cr_List._LayoutBufferChunkOutlineColor);
+		_Canvas.SetBrush(cr_List._LayoutBufferChunkColor);
+
+		/* Get variables used to render chunks */
+		const size_t _CharSize = g_BufferCharSizeX();
+		const size_t _LineSize = g_BufferLineSizeY();
+
+		/* Iterate & Render */
+		for (const std::array<size_t, 2>&_Chunk : _Chunks)
+		{
+			/* Get Positions */
+			const wxPoint _Starting = g_BufferLineBBAtGiven(_Chunk[0]).gStarting();
+
+			int _x, _y, _fx, _fy;
+
+			_x = _Starting.x;
+			_y = _Starting.y;
+
+			_fx = _x;
+			_fy = _y;
+
+			_fx += (_CharSize * _Chunk[1]);
+			_fy += (_LineSize * _ChunkSize);
+
+			/* Render */
+			const wxRect _DrawRect = Framework::Geometry::BoundingBox(wxPoint{
+				_x, _y
+				}, wxPoint{ _fx, _fy }).gRect();
+
+			_Canvas.DrawRectangle(_DrawRect);
+		};
+
+	}
+
+	void TextEditor::hk_BufferRenderText(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render Text */
+		/* Setup */
+		_Canvas.SetFont(cr_List._LayoutBufferFont);
+
+		/* Check whenever to render blocks or real text*/
+		const int _MinimalFontSize = 1; 
+		const int _CurrentFontSize = _Canvas.GetFont().GetPointSize();
+
+		if (_MinimalFontSize ==
+			_CurrentFontSize)
+		{ /* Render blocks */
+			hdl_BufferRenderTextBlocks(
+				_Canvas);
+			return; 
+		} /* Render real text */
+		hdl_BufferRenderTextReal(
+			_Canvas);
+	}
+
+	const std::vector<std::array<size_t, 2>> TextEditor::g_BufferGeneratedChunks(
+		const std::array<size_t, 2> _RenderingRange, const size_t& _ChunksAmount, const size_t& _ChunkSize)
+	{ /* Generate & Return */
+		std::vector<std::array<size_t, 2>> _Chunks;
+		/* Generate */
+		const std::vector<std::string>& _Buffer = cr_List._Buffer;
+		const size_t _BufferMaximalIteration = (_Buffer.size() - 1);
+
+		for (size_t _Iterator = 0;
+			_Iterator < _ChunksAmount; _Iterator++)
+		{ /* Generate singular chunk */
+			const size_t _ChunkPosition = (
+				_RenderingRange[0] + (_ChunkSize * _Iterator)
+				);
+
+			/* Get Chunk Range */
+			std::array<size_t, 2> _ChunkRange;
+
+			_ChunkRange[0] = _ChunkPosition;
+			_ChunkRange[1] = (_ChunkRange[0] + _ChunkSize);
+
+			_ChunkRange[1] = std::min(_BufferMaximalIteration, _ChunkRange[1]);
+			/* Get Chunk Lenght */
+			const size_t _ChunkLongestText = g_BufferChunkLength(_ChunkRange);
+
+			/* Push | position:size_x */
+			_Chunks.push_back(
+				std::array<size_t, 2>{_ChunkPosition, _ChunkLongestText}
+			);
+		}
+		/* Return */
+		return _Chunks; 
+	}
+
+	const size_t TextEditor::g_BufferChunkLength(
+		const std::array<size_t, 2>& _Range)
+	{ /* Calcualte & Return */
+		size_t _ChunkLongestText = 0;
+
+		for (size_t _BufferAt = _Range[0]; _BufferAt < _Range[1];
+			_BufferAt++)
+		{ /* Get Longest */
+			const std::string& _CurrentString = 
+				cr_List._Buffer[_BufferAt];
+
+			size_t _CurrentLength = _CurrentString.length();
+			/* Check if longer */
+			if (_CurrentLength > _ChunkLongestText)
+			{ /* Override */
+				_ChunkLongestText = _CurrentLength;
+			}
+		} /* Return */
+		return _ChunkLongestText;
 	}
 
 	const wxPoint TextEditor::g_BufferTextCenteredPosition(

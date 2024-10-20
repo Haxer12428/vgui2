@@ -2,7 +2,7 @@
 
 ProgramCenter::ProgramCenter(
 	const std::string& Name
-) : wxFrame(nullptr, wxID_ANY, Name, wxPoint(100,100), wxDefaultSize, wxNO_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX)
+) : wxFrame(nullptr, wxID_ANY, Name, wxPoint(100,100), wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX)
 {
 	// Load hooks
 	try
@@ -22,13 +22,13 @@ ProgramCenter::ProgramCenter(
 			);
 
 		const wxPoint _FIXED_POS = wxPoint(
-			120, TitleBarInstance->GetSize().y
+			0, TitleBarInstance->GetSize().y
 		);
 
-		const wxSize _SIZE_ACC = (_FIXED_SIZE - Framework::Transform::WxPointToWxSize2D(_FIXED_POS) - wxSize(0, 60));
+		const wxSize _SIZE_ACC = (_FIXED_SIZE - Framework::Transform::WxPointToWxSize2D(_FIXED_POS) - wxSize(0, 30));
 
-		ProgramMainPanel* _PANEL = new ProgramMainPanel(this, _DEBUG, _FIXED_POS, _SIZE_ACC);
-		_PANEL->SetFocus();
+		m_MainPanel = new ProgramMainPanel(this, _DEBUG, _FIXED_POS, _SIZE_ACC);
+		m_MainPanel->SetFocus();
 		SetFocus();
 	} catch (const std::exception& ex) {
 		// Throw error into LogMessage
@@ -169,7 +169,24 @@ void ProgramCenter::SizeHook(
 	*/
 		sTitleBar();
 		sResizeIcon();
+		s_MainPanel();
 
 	// Finalize with refresh to main window
 	Refresh();
+}
+
+void ProgramCenter::s_MainPanel()
+{
+	const wxSize _FIXED_SIZE = (
+		GetSize() - Framework::Transform::WxPointToWxSize2D(TitleBarInstance->gProgramCenterFixedPosition())
+		);
+
+	const wxPoint _FIXED_POS = wxPoint(
+		0, TitleBarInstance->GetSize().y
+	);
+
+	const wxSize _SIZE_ACC = (_FIXED_SIZE - Framework::Transform::WxPointToWxSize2D(_FIXED_POS) - wxSize(0, 30));
+
+	m_MainPanel->SetPosition(_FIXED_POS);
+	m_MainPanel->SetSize(_FIXED_SIZE);
 }

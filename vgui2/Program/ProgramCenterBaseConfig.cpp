@@ -3,8 +3,8 @@
 
 const std::vector<std::vector<std::string>> ProgramCenter::ConfigElements =
 {
-	{"BaseWindowSizeX", "800"},
-	{"BaseWindowSizeY", "600"},
+	{"BaseWindowSizeX", "1920"},
+	{"BaseWindowSizeY", "1080"},
 	{"BaseWindowDoubleBuffered", "true"},
 	{"BaseWindowBGCR", "20"},
 	{"BaseWindowBGCG", "20"},

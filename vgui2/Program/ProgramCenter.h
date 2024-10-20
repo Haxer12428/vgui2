@@ -14,6 +14,8 @@ class ProgramCenter : public wxFrame
 	);
 
 private:
+	ProgramMainPanel* m_MainPanel; 
+
 /*
 	On Startup
 */
@@ -50,6 +52,8 @@ private:
 */
 	const void sTitleBar();
 	const void sResizeIcon();
+	void s_MainPanel(); /* debug purposes */
+
 /*
 	Instances
 */

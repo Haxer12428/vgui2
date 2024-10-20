@@ -2,6 +2,9 @@
 /* [=============================== Includes ===============================] */
 #include <wx/wx.h>
 #include <wx/dcbuffer.h>
+#include <wx/glcanvas.h>
+#include <wx/graphics.h>
+#include <wx/matrix.h>
 #include <array>
 #include <execution>
 #include <algorithm>
@@ -14,7 +17,7 @@
 /* [=============================== TextEditor ===============================] */
 
 class TextEditor : 
-	wxPanel
+	public wxPanel
 { public: 
 	/* [=============================== Core ===============================] */
 	struct _CoreList
@@ -37,6 +40,8 @@ class TextEditor :
 		wxColor _LayoutBufferActivatedLineColor;
 		wxColor _LayoutCursorColor;
 		wxColor _LayoutCursorOutlineColor;
+		wxColor _LayoutBufferChunkColor; 
+		wxColor _LayoutBufferChunkOutlineColor;
 
 		std::vector<std::string> _Buffer; 
 
@@ -59,6 +64,7 @@ class TextEditor :
 		int _LayoutCursorTabLength = 2; 
 		int _LayoutLineIndexingSpacingY = 8;
 		int _LayoutBufferSpacingY = 8;
+		int _LayoutInfoSpacingY = 10;
 
 		
 		std::array<int, 2> _BufferScroll = { 0, 0 };
@@ -66,6 +72,7 @@ class TextEditor :
 		
 		wxFont _LayoutLinesIndexingFont;
 		wxFont _LayoutBufferFont; 
+		wxFont _LayoutInfoFont; 
 	};
 
 	/* [=============================== Initializer ===============================] */
@@ -82,6 +89,7 @@ private:
 			std::array<int, 4> _BufferBB;
 			std::array<int, 4> _VerticalScrollbarBB;
 			std::array<int, 4> _HorizontalScrollbarBB;
+			std::array<int, 4> _InfoBB; 
 
 			Framework::Geometry::BoundingBox g_BBFromPackedArray(
 				std::array<int, 4>& _Arr
@@ -141,6 +149,12 @@ private:
 		void hk_BufferRenderBackground(wxAutoBufferedPaintDC& _Canvas);
 		void hk_BufferRenderText(wxAutoBufferedPaintDC& _Canvas);
 
+		void hdl_BufferRenderTextReal(wxAutoBufferedPaintDC& _Canvas);
+
+		void hdl_BufferRenderTextBlocks(wxAutoBufferedPaintDC& _Canvas);
+		void hdl_BufferRenderTextBlocksRenderChunks(wxAutoBufferedPaintDC& _Canvas, 
+			const std::vector<std::array<size_t, 2>>& _Chunks, const size_t& _ChunkSize);
+
 		const std::array<int, 2> g_BufferMaximalScroll();
 		const std::array<size_t, 2> g_BufferRenderingRange(); 
 		
@@ -159,7 +173,12 @@ private:
         const std::array<size_t, 2> g_BufferLineDataAtGivenPosition(
             const wxPoint& _Position
         );
-		
+
+		const size_t g_BufferChunkLength(const std::array<size_t, 2>& _Range);
+		const std::vector<std::array<size_t, 2>> g_BufferGeneratedChunks(
+			const std::array<size_t, 2> _RenderingRange, const size_t& _ChunkAmount, const size_t& _ChunkSize
+		); 
+	
 		const int g_BufferLineSizeY() const;
 	/* [=============================== _MouseWheelGlobalActions ===============================] */
 		void init_MouseWheelGlobalActions();

@@ -6,7 +6,7 @@ class ApplicationBootCenter
 	{
 		try
 		{ // Run main element: 'Program Center'
-			new ProgramCenter("vgui2-experimental");
+			wxWindow* Window = new ProgramCenter("vgui2-experimental");
 		}
 		catch (
 			const std::exception& ex) 

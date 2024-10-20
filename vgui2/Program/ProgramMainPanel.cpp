@@ -11,6 +11,9 @@ ProgramMainPanel::ProgramMainPanel(
 
 	wxFont _font2 = wxFont(10, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 	_font2.SetFaceName("Menlo");
+	
+	wxFont _font3 = wxFont(14, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	_font3.SetFaceName("Menlo");
 
 	//_DEBUG->LogTaggedInt("y", this->GetPosition().y);
 
@@ -42,5 +45,21 @@ ProgramMainPanel::ProgramMainPanel(
 	_CoreList._LayoutCursorOutlineColor = wxColor(41, 44, 52);
 	_CoreList._LayoutCursorColor = wxColor(101, 140, 253);
 
-	TextEditor* _Editor = new TextEditor(_CoreList);
+	_CoreList._LayoutBufferChunkColor = wxColor(120, 120, 120);
+	_CoreList._LayoutBufferChunkOutlineColor = wxColor(10, 10, 10);
+
+	_CoreList._LayoutInfoFont = _font3;
+	_CoreList._LayoutInfoSpacingY = 8;
+
+	m_TextEditor = new TextEditor(_CoreList);
+
+	Bind(wxEVT_SIZE, &ProgramMainPanel::hk_OnSize, this);
+}
+
+void ProgramMainPanel::hk_OnSize(
+	wxSizeEvent& _Event
+) {
+	//m_TextEditor->cr_List._Size = GetSize();
+	//m_TextEditor->SetSize(GetSize());
+	//m_TextEditor->Refresh();
 }
