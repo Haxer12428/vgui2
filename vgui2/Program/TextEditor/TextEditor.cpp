@@ -25,6 +25,19 @@
 		TextEditor::_LayoutPositions _Positions;
 
 		const wxSize _GlobalSize = GetSize();
+
+		/* Info */
+		wxMemoryDC _InfoMemoryCanvas;
+		_InfoMemoryCanvas.SetFont(cr_List._LayoutInfoFont);
+
+		const int _InfoSY = (cr_List._LayoutInfoSpacingY
+			+ _InfoMemoryCanvas.GetTextExtent("a").y);
+
+		_Positions._InfoBB[0] = 0;
+		_Positions._InfoBB[1] = GetSize().y - _InfoSY;
+		_Positions._InfoBB[2] = GetSize().x;
+		_Positions._InfoBB[3] = GetSize().y;
+
 		/* _LineIndexing */
 		/* Calculate */
 		wxMemoryDC _LineIndexingMemoryCanvas;
@@ -40,27 +53,11 @@
 			cr_List._LayoutLineIndexingSpacingXStart + _LongestFontLen + cr_List._LayoutLineIndexingSpacingXEnd
 			);
 
-		const int _LineIndexingSY = (
-			_GlobalSize.y
-			);
 		/* x, y, fx, fy */
 		_Positions._LineIndexingBB[0] = 0; 
 		_Positions._LineIndexingBB[1] = 0;
 		_Positions._LineIndexingBB[2] = (_Positions._LineIndexingBB[0] + _LineIndexingSX);
-		_Positions._LineIndexingBB[3] = (_Positions._LineIndexingBB[1] + _LineIndexingSY);
-
-		/* Info */
-		wxMemoryDC _InfoMemoryCanvas;
-		_InfoMemoryCanvas.SetFont(cr_List._LayoutInfoFont);
-		
-		const int _InfoSY = (cr_List._LayoutInfoSpacingY 
-			+ _InfoMemoryCanvas.GetTextExtent("a").y);
-
-		_Positions._InfoBB[0] = _Positions._LineIndexingBB[1];
-		_Positions._InfoBB[1] = GetSize().y - _InfoSY;
-		_Positions._InfoBB[2] = GetSize().x; 
-		_Positions._InfoBB[3] = GetSize().y; 
-
+		_Positions._LineIndexingBB[3] = (_Positions._InfoBB[1]);
 
 
 		/* Scrollbars */
@@ -135,8 +132,22 @@
 	void TextEditor::hk_LineIndexingRender(
 		wxAutoBufferedPaintDC& _Canvas)
 	{ /* Render hook for _LineIndexing */
+		hdl_LineIndexingSetupClippingRegion(_Canvas);
+
 		hk_LineIndexingRenderBackground(_Canvas);
 		hk_LineIndexingRenderNumbers(_Canvas);
+
+		_Canvas.DestroyClippingRegion();
+	}
+
+	void TextEditor::hdl_LineIndexingSetupClippingRegion(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Setup clipping rect */
+		_LayoutPositions _Layout = g_LayoutPositions();
+
+		_Canvas.SetClippingRegion(
+			_Layout.g_BBFromPackedArray(_Layout._LineIndexingBB).gRect()
+		);
 	}
 
 	void TextEditor::hk_LineIndexingRenderBackground(
@@ -385,8 +396,22 @@
 	void TextEditor::hk_BufferRender(
 		wxAutoBufferedPaintDC& _Canvas)
 	{ /* Render hook for _Buffer */
+		hdl_BufferSetupClippingRegion(_Canvas);
+
 		hk_BufferRenderBackground(_Canvas);
 		hk_BufferRenderText(_Canvas);
+
+		_Canvas.DestroyClippingRegion();
+	}
+
+	void TextEditor::hdl_BufferSetupClippingRegion(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Setup clipping region */
+		_LayoutPositions _Layout = g_LayoutPositions();
+
+		_Canvas.SetClippingRegion(
+			_Layout.g_BBFromPackedArray(_Layout._BufferBB).gRect()
+		);
 	}
 
 	void TextEditor::hk_BufferRenderBackground(
@@ -891,16 +916,36 @@
 	{ /* Render cursor */
 		if (cr_List._CursorActive ==
 			false) return; 
+		hdl_CursorSetupClippingRegion(_Canvas);
+
+		hk_CursorRenderObject(_Canvas);
+		
+		_Canvas.DestroyClippingRegion();
+	}
+
+	void TextEditor::hdl_CursorSetupClippingRegion(
+		wxAutoBufferedPaintDC& _Canvas) 
+	{ /* Setup clipping region for _Cursor -> _BufferBB */
+		_LayoutPositions _Layout = g_LayoutPositions();
+
+		_Canvas.SetClippingRegion(
+			_Layout.g_BBFromPackedArray(_Layout._BufferBB).gRect()
+		);
+	}
+
+	void TextEditor::hk_CursorRenderObject(
+		wxAutoBufferedPaintDC& _Canvas)
+	{ /* Render object of a cursor */
 		/* Outline */
-			_Canvas.SetPen(cr_List._LayoutCursorOutlineColor);
-			_Canvas.SetBrush(cr_List._LayoutCursorOutlineColor);
+		_Canvas.SetPen(cr_List._LayoutCursorOutlineColor);
+		_Canvas.SetBrush(cr_List._LayoutCursorOutlineColor);
 
-			_Canvas.DrawRectangle(g_CursorOutlineBB().gRect());
+		_Canvas.DrawRectangle(g_CursorOutlineBB().gRect());
 		/* Real */
-			_Canvas.SetPen(cr_List._LayoutCursorColor);
-			_Canvas.SetBrush(cr_List._LayoutCursorColor);
+		_Canvas.SetPen(cr_List._LayoutCursorColor);
+		_Canvas.SetBrush(cr_List._LayoutCursorColor);
 
-			_Canvas.DrawRectangle(g_CursorBB().gRect());
+		_Canvas.DrawRectangle(g_CursorBB().gRect());
 	}
 
 	void TextEditor::hk_CursorType(

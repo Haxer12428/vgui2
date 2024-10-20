@@ -42,6 +42,17 @@ class TextEditor :
 		wxColor _LayoutCursorOutlineColor;
 		wxColor _LayoutBufferChunkColor; 
 		wxColor _LayoutBufferChunkOutlineColor;
+		wxColor _LayoutInfoBackgroundColor;
+		wxColor _LayoutInfoFontColor; 
+
+		enum m_LayoutInfoEndlineStandard
+		{
+			CRLF = 0, 
+			CR = 1, 
+			LF = 2
+		};
+
+		m_LayoutInfoEndlineStandard _LayoutInfoEndlineStandardCurrent = m_LayoutInfoEndlineStandard::CRLF;
 
 		std::vector<std::string> _Buffer; 
 
@@ -66,6 +77,8 @@ class TextEditor :
 		int _LayoutBufferSpacingY = 8;
 		int _LayoutInfoSpacingY = 10;
 
+
+		std::string _LayoutInfoCharSystem = "ASCII";
 		
 		std::array<int, 2> _BufferScroll = { 0, 0 };
 		std::array<size_t, 2> _CursorAt = { 0, 0 };
@@ -73,6 +86,7 @@ class TextEditor :
 		wxFont _LayoutLinesIndexingFont;
 		wxFont _LayoutBufferFont; 
 		wxFont _LayoutInfoFont; 
+
 	};
 
 	/* [=============================== Initializer ===============================] */
@@ -124,6 +138,9 @@ private:
 		void hk_LineIndexingRenderBackground(wxAutoBufferedPaintDC& _Canvas);
 		void hk_LineIndexingRenderNumbers(wxAutoBufferedPaintDC& _Canvas);
 
+		void hdl_LineIndexingSetupClippingRegion(
+			wxAutoBufferedPaintDC& _Canvas);
+
 		Framework::Geometry::BoundingBox g_LineIndexingGivenAtBB(
 			const size_t& _Where
 		);
@@ -146,6 +163,8 @@ private:
 		ProgramSlider* m_ScrollbarsHorizontal;
 	/* [=============================== _Buffer ===============================] */
 		void hk_BufferRender(wxAutoBufferedPaintDC& _Canvas);
+		void hdl_BufferSetupClippingRegion(wxAutoBufferedPaintDC& _Canvas);
+
 		void hk_BufferRenderBackground(wxAutoBufferedPaintDC& _Canvas);
 		void hk_BufferRenderText(wxAutoBufferedPaintDC& _Canvas);
 
@@ -202,6 +221,8 @@ private:
         void hk_CursorPlace(wxMouseEvent& _Event);
 
 		void hk_CursorRender(wxAutoBufferedPaintDC& _Canvas);
+		void hk_CursorRenderObject(wxAutoBufferedPaintDC& _Canvas);
+		void hdl_CursorSetupClippingRegion(wxAutoBufferedPaintDC& _Canvas);
 
 		void hk_CursorType(wxKeyEvent& _Event, const std::string& _Char);
 		void hk_CursorTypeTabulator(wxKeyEvent& _Event);
