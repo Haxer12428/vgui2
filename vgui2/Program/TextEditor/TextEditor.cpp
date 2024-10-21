@@ -1845,7 +1845,7 @@
 		);
 
 		p_InfoElement(
-			std::to_string(cr_List._CursorAt[0]) + ":" + std::to_string(cr_List._CursorAt[1]), "@char:line", m_InfoElement::m_FromLeft
+			std::to_string(cr_List._CursorAt[0]) + ":" + std::to_string(cr_List._CursorAt[1]), "@line:char", m_InfoElement::m_FromLeft
 		);
 
 		p_InfoElement(
