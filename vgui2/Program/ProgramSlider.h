@@ -65,7 +65,8 @@ private:
 	*/
 	const void rBackground(wxAutoBufferedPaintDC& _CANVAS);
 	const void rElement(wxAutoBufferedPaintDC& _CANVAS); 
-	
+
+    void hk_DragForceRefresh(wxTimerEvent& _Event);
 	/*
 		Animate 
 	*/
@@ -106,5 +107,7 @@ private:
 	wxTimer _DRAG_UPDATE_TIMER; 
 	wxTimer _DRAG_ANIMATE_TIMER; 
 
-	int _DRAG_ANIMATE_MS = 10; 
+	int _DRAG_ANIMATE_MS = 15;
+
+    wxTimer _DRAG_FORCE_REFRESH_TIMER;
 };

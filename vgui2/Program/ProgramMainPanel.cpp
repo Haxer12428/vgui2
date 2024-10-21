@@ -31,7 +31,7 @@ ProgramMainPanel::ProgramMainPanel(
 	_CoreList._LineIndexingActivatedLines = { 0 };
 	_CoreList._Buffer.push_back("123");
 	_CoreList._Buffer.push_back("nigger");
-	_CoreList._Buffer = { "" };//Framework::File::Open("C:\\vgui2\\TextEditor.cpp").Read().gVector();
+	_CoreList._Buffer = Framework::File::Open("C:\\Users\\czarnynigger\\source\\Repos\\vgui2\\vgui2\\Program\\TextEditor\\TextEditor.cpp").Read().gVector();
 
 	_CoreList.m_BufferSpacingY = _CoreList.m_LineIndexingSpacingY;
 	_CoreList._LayoutBufferFont = _font2;

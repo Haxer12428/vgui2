@@ -27,11 +27,21 @@ ProgramSlider::ProgramSlider(
 		lPaintHook();
 		lMouseHooks();
 		lDragAnimateHook();
+
+        _DRAG_FORCE_REFRESH_TIMER.SetOwner(this);
+        Bind(wxEVT_TIMER, &ProgramSlider::hk_DragForceRefresh, this, _DRAG_FORCE_REFRESH_TIMER.GetId());
 	} catch (const std::exception& ex) 
 	{ // Pass the exception to a object lower 
 		throw ex;
 	}
 }
+
+void ProgramSlider::hk_DragForceRefresh(
+    wxTimerEvent& _Event)
+{ /* Timer event */
+    Refresh();
+}
+
 
 const void ProgramSlider::lPanelParams()
 {
@@ -45,6 +55,7 @@ const void ProgramSlider::lPanelParams()
 
 const void ProgramSlider::lPaintHook()
 {
+    SetDoubleBuffered(true);
 	SetBackgroundStyle(wxBG_STYLE_COLOUR);
 	Bind(wxEVT_PAINT, &ProgramSlider::hPaint, this);
 }
@@ -58,6 +69,8 @@ void ProgramSlider::hPaint(
 
 		rBackground(_CANVAS);
 		rElement(_CANVAS);
+
+       // _DRAG_FORCE_REFRESH_TIMER.StartOnce(1);
 	} catch (const std::exception &ex) { _DEBUG->Push(ex.what()); }
 }
 
@@ -248,16 +261,31 @@ const void ProgramSlider::aDragHandler()
 		return; // Matching, no need to proceed 
 	const wxSize _SIZE_DIF = (GetSize() - gElementBoundingBox().gSize()); 
 
-	Framework::Geometry::BoundingBox ELEMENT_BOUNDING_BOX = gElementBoundingBox();
+	
 
 	const double _VALUE_PER_MS = ((
 		(double)(_MODE == Mode::Vertical ? _SIZE_DIF.y : _SIZE_DIF.x) / (((double)1000 / (double)_DRAG_ANIMATE_MS) / (double)6))
 	); // Full slider will be moved in 100ms maximum
 
+    Framework::Geometry::BoundingBox ELEMENT_BOUNDING_BOX = gElementBoundingBox();
+    wxPoint NewFinal;
+    wxPoint NewStarting;
+
 	if (_SCROLL > _SCROLL_WANTED) // - operation 
-	{ this->_SCROLL = std::max(_SCROLL_WANTED, (double)_SCROLL - _VALUE_PER_MS); Refresh();
-		return; }
-	this->_SCROLL = std::min(_SCROLL_WANTED, (double)_SCROLL + _VALUE_PER_MS); Refresh(); // + operation 
+	{
+        this->_SCROLL = std::max(_SCROLL_WANTED, (double)_SCROLL - _VALUE_PER_MS);
+        NewStarting = gElementBoundingBox().gStarting();
+        NewFinal = ELEMENT_BOUNDING_BOX.gFinal();
+    }
+    else
+    {
+        this->_SCROLL = std::min(_SCROLL_WANTED, (double)_SCROLL + _VALUE_PER_MS); RefreshRect(ELEMENT_BOUNDING_BOX.gRect()); // + operation
+        NewStarting = ELEMENT_BOUNDING_BOX.gStarting();
+        NewFinal = gElementBoundingBox().gFinal();
+    }
+
+    Framework::Geometry::BoundingBox _NewBB = { NewStarting, NewFinal };
+    RefreshRect(_NewBB.gRect()); // + operation 
 }
 
 const int ProgramSlider::gMaxScroll() const
