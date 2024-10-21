@@ -572,7 +572,7 @@
 			_Iterator < _ChunksAmount; _Iterator++)
 		{ /* Generate singular chunk */
 			const size_t _ChunkPosition = (
-				_RenderingRange[0] + (_ChunkSize * _Iterator)
+				_RenderingRange[0] - (_RenderingRange[0] % _ChunkSize) + (_ChunkSize * _Iterator)
 				);
 
 			/* Get Chunk Range */
